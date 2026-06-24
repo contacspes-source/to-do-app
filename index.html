@@ -724,8 +724,49 @@ document.getElementById("addGoal").onclick=function(){openGoal()};
 w.querySelectorAll("[data-editg]").forEach(function(b){b.onclick=function(){openGoal(b.dataset.editg)}});
 w.querySelectorAll("[data-delg]").forEach(function(b){b.onclick=function(){if(confirm("¿Eliminar esta meta?")){DB.goals=DB.goals.filter(function(x){return x.id!=b.dataset.delg});save();renderDinero("metas")}}});
 w.querySelectorAll("[data-abona]").forEach(function(b){b.onclick=function(){var g=DB.goals.find(function(x){return x.id==b.dataset.abona});if(!g)return;var v=prompt("¿Cuánto abonar a "+g.name+"?");if(v===null)return;var n=+v;if(!n||n<=0)return;g.saved=(g.saved||0)+n;save();renderDinero("metas")}}});
+}else if(seg==="proy"){
+var cash=totalDebito(),mInc=monthlyIncome(),mGas=monthlyGasto(),mSub=monthlySubs(),deudaT=totalDebt();
+var H=proyH||1;var inc2=mInc*H,gas2=mGas*H,sub2=mSub*H,pay2=deudaT;
+var proj=cash+inc2-gas2-sub2-pay2;
+var hl=H===1?"30 días":H===3?"90 días":"1 año";
+var h='<div class="seg" id="proyseg"><button data-m="1">30 días</button><button data-m="3">90 días</button><button data-m="12">1 año</button></div>';
+h+='<div class="card-pad" style="text-align:center"><div class="l" style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono)">Saldo proyectado · '+hl+'</div><div class="big-money" style="margin-top:8px;color:'+(proj>=0?"var(--ink-1)":"var(--warn)")+'">'+money(proj)+'</div></div>';
+h+='<div class="lrow"><span>Dinero actual</span><span class="money">'+money(cash)+'</span></div>';
+h+='<div class="lrow"><span>Ingresos esperados</span><span class="money">+'+money(inc2)+'</span></div>';
+h+='<div class="lrow"><span>Gastos estimados</span><span class="money">−'+money(gas2)+'</span></div>';
+h+='<div class="lrow"><span>Suscripciones</span><span class="money">−'+money(sub2)+'</span></div>';
+h+='<div class="lrow"><span>Pagos de tarjeta</span><span class="money">−'+money(pay2)+'</span></div>';
+h+='<div class="lrow" style="border:0"><b style="font-weight:600">Saldo proyectado</b><b class="money" style="color:'+(proj>=0?"var(--ink-1)":"var(--warn)")+'">'+money(proj)+'</b></div>';
+h+='<div class="sect">¿Cuánto puedo gastar?</div>';
+var committed=deudaT+mSub,safe=cash-committed;
+h+='<div class="card-pad"><div style="font-size:14px;color:var(--ink-2);line-height:1.6">Este mes puedes gastar aprox <b style="color:var(--ink-1)">'+money(Math.max(0,safe))+'</b> más sin afectar tus pagos de tarjeta ni tus suscripciones.'+(safe<0?' <span style="color:var(--warn)">Cuidado: tus compromisos ('+money(committed)+') superan tu efectivo.</span>':'')+'</div></div>';
+var allG=DB.tx.filter(function(t){return t.type==="gasto"}),msp=monthsSpanAll(allG),avgC={};
+allG.forEach(function(t){avgC[t.cat]=(avgC[t.cat]||0)+t.amount});
+var mt2=monthTx(),curC={};mt2.filter(function(t){return t.type==="gasto"}).forEach(function(t){curC[t.cat]=(curC[t.cat]||0)+t.amount});
+var cks=Object.keys(avgC);
+if(cks.length){h+='<div class="sect">Margen por categoría (este mes)</div>';
+cks.map(function(k){return {k:k,avg:avgC[k]/msp,cur:curC[k]||0}}).sort(function(a,b){return b.avg-a.avg}).forEach(function(o){var rem=o.avg-o.cur;h+='<div class="lrow"><span>'+esc(o.k)+' <span class="ld">prom. '+money(o.avg)+'</span></span><span class="money" style="color:'+(rem>=0?"var(--ink-1)":"var(--warn)")+'">'+(rem>=0?"te quedan "+money(rem):"+"+money(-rem)+" sobre")+'</span></div>'});}
+h+='<div class="note">Estimaciones basadas en tu historial. No es asesoría financiera.</div>';
+w.innerHTML=h;buildProySeg();
 }}
 function nextDateForDay(day){var n=new Date();var y=n.getFullYear(),m=n.getMonth();if(day<n.getDate())m+=1;return new Date(y,m,day);}
+function monthsSpanAll(arr){if(!arr.length)return 1;var mn=arr[0].date,mx=arr[0].date;arr.forEach(function(t){if(t.date<mn)mn=t.date;if(t.date>mx)mx=t.date});return Math.max(1,(new Date(mx)-new Date(mn))/(2592e6)+1);}
+function monthlyIncome(){var inc={};DB.tx.filter(function(t){return t.type==="ingreso"}).forEach(function(t){var o=inc[t.cat]||(inc[t.cat]={s:0,min:t.date,max:t.date});o.s+=t.amount;if(t.date<o.min)o.min=t.date;if(t.date>o.max)o.max=t.date});var tot=0;Object.keys(inc).forEach(function(k){var o=inc[k];var months=Math.max(1,(new Date(o.max)-new Date(o.min))/(2592e6)+1);tot+=o.s/months});return tot;}
+function monthlyGasto(){var g=DB.tx.filter(function(t){return t.type==="gasto"});if(!g.length)return 0;return sum(g.map(function(t){return t.amount}))/monthsSpanAll(g);}
+function monthlySubs(){return sum((DB.subs||[]).filter(function(s){return s.active!==false}).map(function(s){return s.amount||0}));}
+function buildProySeg(){var w=document.getElementById("proyseg");if(!w)return;w.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",(+b.dataset.m)===proyH);b.onclick=function(){proyH=+b.dataset.m;renderDinero("proy")}});}
+function computeAlerts(){var A=[],today=new Date();
+DB.cards.forEach(function(c){if(c.active===false)return;var u=c.limit?(c.balance||0)/c.limit:0;if(u>0.7)A.push("⚠ "+c.name+" supera 70% de uso ("+Math.round(u*100)+"%)");});
+DB.cards.forEach(function(c){if(c.active===false||!((c.balance||0)>0)||!c.pay)return;var d=nextDateForDay(+c.pay),days=Math.round((d-today)/864e5);if(days>=0&&days<=3)A.push("⚠ Pago de "+c.name+" "+(days===0?"hoy":"en "+days+" día"+(days>1?"s":"")));});
+(DB.subs||[]).forEach(function(s){if(s.active===false||!s.day)return;var d=nextDateForDay(+s.day),days=Math.round((d-today)/864e5);if(days>=0&&days<=3)A.push("⚠ Cobro de "+s.name+" "+(days===0?"hoy":"en "+days+" día"+(days>1?"s":"")));});
+var cm=today.getMonth(),cy=today.getFullYear(),curCat={},prevCat={};
+DB.tx.filter(function(t){return t.type==="gasto"}).forEach(function(t){var d=new Date(t.date);if(d.getMonth()===cm&&d.getFullYear()===cy)curCat[t.cat]=(curCat[t.cat]||0)+t.amount;else{var key=d.getFullYear()+"-"+d.getMonth();prevCat[t.cat]=prevCat[t.cat]||{};prevCat[t.cat][key]=(prevCat[t.cat][key]||0)+t.amount;}});
+Object.keys(curCat).forEach(function(cat){var hist=prevCat[cat];if(!hist)return;var ks=Object.keys(hist);if(!ks.length)return;var avg=sum(ks.map(function(k){return hist[k]}))/ks.length;if(avg>0&&curCat[cat]>avg*1.3)A.push("⚠ Gastaste más en "+cat+" este mes ("+money(curCat[cat])+" vs prom. "+money(avg)+")");});
+var cash=totalDebito(),due=0;
+DB.cards.forEach(function(c){if(c.active!==false&&(c.balance||0)>0&&c.pay){var d=nextDateForDay(+c.pay);if((d-today)/864e5<=14)due+=c.balance;}});
+(DB.subs||[]).forEach(function(s){if(s.active!==false&&s.day){var d=nextDateForDay(+s.day);if((d-today)/864e5<=14)due+=s.amount||0;}});
+if(due>cash&&due>0)A.push("⚠ Tus pagos de los próximos 14 días ("+money(due)+") superan tu efectivo ("+money(cash)+")");
+return A;}
 function renderQuick(){var w=document.getElementById("qr");if(!w)return;var favs=["Comida","Gasolina","Transporte","Entretenimiento"];w.innerHTML="";favs.forEach(function(c){var b=document.createElement("button");b.className="qrb";b.textContent=c;b.onclick=function(){openTx("gasto",c)};w.appendChild(b)})}
 function moveCard(id,dir){var i=DB.cards.findIndex(function(c){return c.id==id});if(i<0)return;var j=i+dir;if(j<0||j>=DB.cards.length)return;var tmp=DB.cards[i];DB.cards[i]=DB.cards[j];DB.cards[j]=tmp;save();renderDinero("tarjetas")}
 
