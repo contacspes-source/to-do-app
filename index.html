@@ -723,7 +723,7 @@ w.innerHTML=h;
 document.getElementById("addGoal").onclick=function(){openGoal()};
 w.querySelectorAll("[data-editg]").forEach(function(b){b.onclick=function(){openGoal(b.dataset.editg)}});
 w.querySelectorAll("[data-delg]").forEach(function(b){b.onclick=function(){if(confirm("¿Eliminar esta meta?")){DB.goals=DB.goals.filter(function(x){return x.id!=b.dataset.delg});save();renderDinero("metas")}}});
-w.querySelectorAll("[data-abona]").forEach(function(b){b.onclick=function(){var g=DB.goals.find(function(x){return x.id==b.dataset.abona});if(!g)return;var v=prompt("¿Cuánto abonar a "+g.name+"?");if(v===null)return;var n=+v;if(!n||n<=0)return;g.saved=(g.saved||0)+n;save();renderDinero("metas")}}});
+w.querySelectorAll("[data-abona]").forEach(function(b){b.onclick=function(){var g=DB.goals.find(function(x){return x.id==b.dataset.abona});if(!g)return;var v=prompt("¿Cuánto abonar a "+g.name+"?");if(v===null)return;var n=+v;if(!n||n<=0)return;g.saved=(g.saved||0)+n;save();renderDinero("metas")}});
 }else if(seg==="proy"){
 var cash=totalDebito(),mInc=monthlyIncome(),mGas=monthlyGasto(),mSub=monthlySubs(),deudaT=totalDebt();
 var H=proyH||1;var inc2=mInc*H,gas2=mGas*H,sub2=mSub*H,pay2=deudaT;
