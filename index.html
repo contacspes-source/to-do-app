@@ -183,6 +183,7 @@ body{background:var(--bg);color:var(--ink-1);font-family:var(--font-ui);font-siz
 .sheet h3{font-weight:600;font-size:19px;margin:0 0 16px}
 .lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--hair);font-size:14px}
 .lrow .ld{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
+.alert{border:1px solid var(--warn);background:var(--warn-dim);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.4;margin-bottom:8px}
 @media(min-width:900px){
 .shell{display:flex;min-height:100vh}
 .side{display:flex;flex-direction:column;width:230px;flex:none;height:100vh;position:sticky;top:0;border-right:1px solid var(--hair);padding:26px 14px;gap:3px}
@@ -252,7 +253,7 @@ body{background:var(--bg);color:var(--ink-1);font-family:var(--font-ui);font-siz
 <!-- DINERO -->
 <section class="screen" id="dinero">
 <div class="h-screen">Tu dinero</div>
-<div class="seg" id="dinseg"><button class="on" data-v="resumen">Resumen</button><button data-v="tarjetas">Crédito</button><button data-v="debito">Débito</button><button data-v="deuda">Deuda</button><button data-v="calendario">Calendario</button><button data-v="subs">Suscrip.</button><button data-v="metas">Metas</button><button data-v="movs">Movimientos</button></div>
+<div class="seg" id="dinseg"><button class="on" data-v="resumen">Resumen</button><button data-v="tarjetas">Crédito</button><button data-v="debito">Débito</button><button data-v="deuda">Deuda</button><button data-v="calendario">Calendario</button><button data-v="subs">Suscrip.</button><button data-v="metas">Metas</button><button data-v="proy">Proyección</button><button data-v="movs">Movimientos</button></div>
 <div id="dinBody"></div>
 </section>
 
@@ -594,7 +595,7 @@ document.getElementById("newHabit").addEventListener("keydown",function(e){if(e.
 
 /* ===== DINERO (v3) ===== */
 var CARDCOLORS=["#2563eb","#7c3aed","#db2777","#16a34a","#ea580c","#0891b2","#4b5563","#111111"];
-var dinSeg="resumen";
+var dinSeg="resumen";var proyH=1;
 document.querySelectorAll("#dinseg button").forEach(function(b){b.onclick=function(){document.querySelectorAll("#dinseg button").forEach(function(x){x.classList.remove("on")});b.classList.add("on");dinSeg=b.dataset.v;renderDinero(dinSeg)}});
 function monthTx(){var now=new Date();return DB.tx.filter(function(t){var d=new Date(t.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})}
 function sum(a){return a.reduce(function(s,x){return s+x},0)}
@@ -613,6 +614,7 @@ var deuda=totalDebt();var debito=totalDebito();
 if(seg==="resumen"){
 var disp=ing-gas;
 var h='<div class="card-pad" style="text-align:center"><div class="l" style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono)">Disponible en cuentas</div><div class="big-money" style="margin-top:8px">'+money(debito)+'</div></div>';
+var alerts=computeAlerts();if(alerts.length){h+='<div class="sect">Alertas</div>';alerts.forEach(function(a){h+='<div class="alert">'+esc(a)+'</div>'});}
 h+='<div class="sect">Captura rápida</div><div class="qr" id="qr"></div>';
 h+='<div class="sect">Flujo del mes</div>';
 h+='<div class="stat-row"><div class="stat"><div class="n acc">'+money(ing)+'</div><div class="l">Ingresos</div></div><div class="stat"><div class="n">'+money(gas)+'</div><div class="l">Gastos</div></div><div class="stat"><div class="n" style="color:'+(disp>=0?"var(--ink-1)":"var(--warn)")+'">'+money(disp)+'</div><div class="l">Disponible</div></div></div>';
