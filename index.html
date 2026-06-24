@@ -181,6 +181,8 @@ body{background:var(--bg);color:var(--ink-1);font-family:var(--font-ui);font-siz
 .modal.on{display:flex}
 .sheet{background:var(--bg);border:1px solid var(--hair);border-radius:14px 14px 0 0;width:100%;max-width:560px;padding:22px 22px calc(24px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto}
 .sheet h3{font-weight:600;font-size:19px;margin:0 0 16px}
+.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.lrow .ld{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
 @media(min-width:900px){
 .shell{display:flex;min-height:100vh}
 .side{display:flex;flex-direction:column;width:230px;flex:none;height:100vh;position:sticky;top:0;border-right:1px solid var(--hair);padding:26px 14px;gap:3px}
@@ -250,7 +252,7 @@ body{background:var(--bg);color:var(--ink-1);font-family:var(--font-ui);font-siz
 <!-- DINERO -->
 <section class="screen" id="dinero">
 <div class="h-screen">Tu dinero</div>
-<div class="seg" id="dinseg"><button class="on" data-v="resumen">Resumen</button><button data-v="tarjetas">Crédito</button><button data-v="debito">Débito</button><button data-v="movs">Movimientos</button><button data-v="financiar">Financiar</button></div>
+<div class="seg" id="dinseg"><button class="on" data-v="resumen">Resumen</button><button data-v="tarjetas">Crédito</button><button data-v="debito">Débito</button><button data-v="deuda">Deuda</button><button data-v="calendario">Calendario</button><button data-v="movs">Movimientos</button></div>
 <div id="dinBody"></div>
 </section>
 
@@ -648,15 +650,38 @@ w.innerHTML=h;var listed=mt.slice().sort(function(a,b){return new Date(b.date)-n
 listed.forEach(function(t){var src=t.method==="credito"?((cardById(t.cardId)||{}).name||""):((acctById(t.acctId)||{}).name||"");var el=document.createElement("div");el.className="tx";el.innerHTML='<div class="ti">'+(t.type==="ingreso"?"+":"−")+'</div><div class="tn">'+esc(t.cat)+(t.note?' · <span style="color:var(--ink-3)">'+esc(t.note)+'</span>':'')+'<div class="td">'+new Date(t.date).toLocaleDateString("es-MX",{day:"numeric",month:"short"})+' · '+(t.method||"efectivo")+(src?" · "+esc(src):"")+'</div></div><div style="display:flex;align-items:center;gap:10px"><div class="tm '+(t.type==="ingreso"?"in":"")+'">'+(t.type==="ingreso"?"+":"−")+money(t.amount)+'</div><button class="hx" data-delt="'+t.id+'" style="color:var(--ink-4);background:none;border:0;font-size:16px;cursor:pointer">×</button></div>';w.appendChild(el)});
 document.getElementById("addTx").onclick=function(){openTx()};
 w.querySelectorAll("[data-delt]").forEach(function(b){b.onclick=function(){var t=DB.tx.find(function(x){return x.id==b.dataset.delt});if(t&&confirm("¿Eliminar este movimiento?")){applyTx(t,-1);DB.tx=DB.tx.filter(function(x){return x.id!=t.id});save();renderDinero("movs")}}});
-}else if(seg==="financiar"){
-var h='<div class="princ" style="background:var(--warn-dim);border-color:var(--warn);color:var(--warn)">Información general, no asesoría financiera. Para decisiones importantes consulta a un profesional.</div>';
-if(!DB.cards.length){h+='<div class="note">Agrega tus tarjetas en la pestaña Crédito para ver un plan de pago sugerido.</div>';w.innerHTML=h;return}
+}else if(seg==="deuda"){
+var h='<div class="card-pad" style="text-align:center"><div class="l" style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono)">Deuda total</div><div class="big-money" style="margin-top:8px;color:'+(deuda>0?"var(--warn)":"var(--ink-1)")+'">'+money(deuda)+'</div></div>';
+var used=DB.cards.slice().filter(function(c){return (c.balance||0)>0}).sort(function(a,b){return (b.balance||0)-(a.balance||0)});
+h+='<div class="sect">Crédito usado</div>';
+if(!used.length)h+='<div class="note">Sin deuda registrada.</div>';
+used.forEach(function(c){h+='<div class="lrow"><span>'+esc(c.name)+'</span><span class="money">'+money(c.balance)+'</span></div>'});
+if(used.length)h+='<div class="lrow" style="border:0"><b style="font-weight:600">Total usado</b><b class="money" style="color:var(--warn)">'+money(deuda)+'</b></div>';
+h+='<div class="sect">Pagos próximos</div>';
+var pays=DB.cards.filter(function(c){return c.active!==false&&(c.balance||0)>0&&c.pay}).map(function(c){return {d:nextDateForDay(+c.pay),name:c.name,amt:c.balance||0}}).sort(function(a,b){return a.d-b.d});
+if(!pays.length)h+='<div class="note">Agrega día de pago y saldo a tus tarjetas para verlos.</div>';
+pays.forEach(function(p){h+='<div class="lrow"><span><span class="ld">'+p.d.toLocaleDateString("es-MX",{day:"numeric",month:"short"})+'</span> · '+esc(p.name)+'</span><span class="money">'+money(p.amt)+'</span></div>'});
 var ordered=DB.cards.slice().filter(function(c){return (c.balance||0)>0}).sort(function(a,b){return (b.apr||0)-(a.apr||0)});
-h+='<div class="sect">Orden sugerido (método avalancha)</div><div class="note" style="margin-top:0;margin-bottom:12px">Pagas el mínimo en todas y atacas primero la de mayor interés: es lo que menos intereses te cuesta.</div>';
-ordered.forEach(function(c,i){h+='<div class="card-pad" style="margin-bottom:8px;'+(i===0?"border-color:var(--ink-1)":"")+'"><div style="display:flex;justify-content:space-between"><b style="font-weight:500">'+(i+1)+'. '+esc(c.name)+'</b><span class="money" style="color:var(--warn)">'+money(c.balance)+'</span></div><div class="note" style="margin-top:4px">'+(c.apr||0)+'% anual'+(i===0?" · empieza por esta":"")+'</div></div>'});
-h+='<div class="sect">Buenas prácticas</div><div class="card-pad"><div style="font-size:14px;color:var(--ink-2);line-height:1.7">· Paga siempre más que el mínimo.<br>· Liquida antes de la fecha de corte para no generar intereses.<br>· Mantén el uso por debajo del 30% del límite.<br>· Evita usar la tarjeta para lo que no puedas pagar al mes.<br>· Un fondo de emergencia pequeño evita endeudarte de nuevo.</div></div>';
+if(ordered.length){
+h+='<div class="sect">Orden de pago sugerido (avalancha)</div><div class="note" style="margin-top:0;margin-bottom:10px">Paga el mínimo en todas y ataca primero la de mayor interés.</div>';
+ordered.forEach(function(c,i){h+='<div class="lrow"'+(i===0?' style="border-color:var(--ink-1)"':'')+'><span>'+(i+1)+'. '+esc(c.name)+' · '+(c.apr||0)+'%</span><span class="money" style="color:var(--warn)">'+money(c.balance)+'</span></div>'});
+}
+h+='<div class="sect">Buenas prácticas</div><div class="card-pad"><div style="font-size:14px;color:var(--ink-2);line-height:1.7">· Paga siempre más que el mínimo.<br>· Liquida antes de la fecha de corte para no generar intereses.<br>· Mantén el uso por debajo del 30% del límite.<br>· Un fondo de emergencia pequeño evita endeudarte de nuevo.</div></div>';
+h+='<div class="note">Información general, no asesoría financiera.</div>';
+w.innerHTML=h;
+}else if(seg==="calendario"){
+var now=new Date();var mes=now.toLocaleDateString("es-MX",{month:"long",year:"numeric"});
+var h='<div class="card-pad" style="text-align:center"><div class="l" style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono)">Calendario financiero</div><div style="font-weight:600;font-size:18px;margin-top:6px;text-transform:capitalize">'+mes+'</div></div>';
+var ev=[];
+DB.cards.forEach(function(c){if(c.active===false)return;if(c.cut)ev.push({day:+c.cut,label:"Corte "+c.name,amt:null});if(c.pay)ev.push({day:+c.pay,label:"Pago "+c.name,amt:(c.balance||0)>0?c.balance:null});});
+ev.sort(function(a,b){return a.day-b.day});
+if(!ev.length)h+='<div class="note">Agrega fechas de corte y pago a tus tarjetas para ver tu calendario.</div>';
+var today=now.getDate();
+ev.forEach(function(e){var soon=e.day>=today&&(e.day-today)<=3;h+='<div class="lrow"><span><span class="ld">'+e.day+'</span> · '+esc(e.label)+(soon?' <span style="color:var(--warn)">• pronto</span>':'')+'</span>'+(e.amt!=null?'<span class="money">'+money(e.amt)+'</span>':'<span class="ld">—</span>')+'</div>'});
+h+='<div class="note" style="margin-top:14px">Las suscripciones aparecerán aquí en la Fase 3.</div>';
 w.innerHTML=h;
 }}
+function nextDateForDay(day){var n=new Date();var y=n.getFullYear(),m=n.getMonth();if(day<n.getDate())m+=1;return new Date(y,m,day);}
 function renderQuick(){var w=document.getElementById("qr");if(!w)return;var favs=["Comida","Gasolina","Transporte","Entretenimiento"];w.innerHTML="";favs.forEach(function(c){var b=document.createElement("button");b.className="qrb";b.textContent=c;b.onclick=function(){openTx("gasto",c)};w.appendChild(b)})}
 function moveCard(id,dir){var i=DB.cards.findIndex(function(c){return c.id==id});if(i<0)return;var j=i+dir;if(j<0||j>=DB.cards.length)return;var tmp=DB.cards[i];DB.cards[i]=DB.cards[j];DB.cards[j]=tmp;save();renderDinero("tarjetas")}
 
