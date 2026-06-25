@@ -1,0 +1,33 @@
+/* ============================================================
+   tokens.css — variables de diseño (colores, tipografía, radios)
+   Las barras de navegación usan tokens --nav-* SIEMPRE oscuros,
+   independientes del tema claro/oscuro del contenido.
+   ============================================================ */
+:root{
+  --bg:#ffffff;--bg-soft:#fafafa;
+  --ink-1:#161616;--ink-2:#5b5b5b;--ink-3:#8c8c8c;--ink-4:#bcbcbc;
+  --hair:#ececec;--hair-2:#d9d9d9;
+  --accent:#2563eb;--accent-ink:#ffffff;--accent-dim:#eef2ff;
+  --warn:#9a6b2f;--warn-dim:#f4eee6;
+  --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r-card:12px;--r-input:10px;--r-pill:999px;--ease:cubic-bezier(.2,.6,.2,1);--shadow:none;
+
+  /* ---- Navegación: identidad oscura y consistente (corrección 4) ---- */
+  --nav-bg:#0d0d0f;          /* fondo principal de barras */
+  --nav-surface:#17171a;     /* superficie elevada (hover) */
+  --nav-elevated:#202026;    /* chips / contenedores de segmentos */
+  --nav-ink:#8b8b95;         /* texto inactivo */
+  --nav-ink-active:#ffffff;  /* texto activo */
+  --nav-active-bg:#2b2b33;   /* fondo del item activo */
+  --nav-accent:#5b8cff;      /* acento para estados activos */
+  --nav-hair:#262630;        /* divisores */
+}
+[data-theme="dark"]{
+  --bg:#121212;--bg-soft:#181818;
+  --ink-1:#f1f1f1;--ink-2:#a6a6a6;--ink-3:#7a7a7a;--ink-4:#535353;
+  --hair:#272727;--hair-2:#393939;
+  --accent:#5b8cff;--accent-ink:#0b0b0b;--accent-dim:#1a2236;
+  --warn:#c9a35e;--warn-dim:#231d11;
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

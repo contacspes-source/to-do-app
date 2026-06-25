@@ -1,0 +1,119 @@
+/* ============================================================
+   nav.css — TODA la navegación con identidad oscura y moderna
+   (corrección 4): barra superior, lateral, inferior móvil,
+   menús secundarios (.seg / .seg-grid) y barras internas (.daysel).
+   ============================================================ */
+
+/* ---------- Barra superior (móvil) ---------- */
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:0 -22px 8px;padding:14px 22px calc(14px) ;
+  background:var(--nav-bg);color:var(--nav-ink-active);
+  border-bottom:1px solid var(--nav-hair);
+  position:sticky;top:0;z-index:15;
+}
+.topbar .brand{font-size:15px;font-weight:600;letter-spacing:.01em;color:var(--nav-ink-active)}
+.topbar .icbtn{
+  width:38px;height:38px;border-radius:10px;border:1px solid var(--nav-hair);
+  background:var(--nav-surface);color:var(--nav-ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;
+  transition:background .2s var(--ease),color .2s var(--ease)}
+.topbar .icbtn:hover{background:var(--nav-active-bg);color:var(--nav-ink-active)}
+.topbar .icbtn:active{transform:scale(.95)}
+
+/* ---------- Barra lateral (escritorio) ---------- */
+.side{display:none}
+
+/* ---------- Barra inferior (móvil) ---------- */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  display:flex;align-items:stretch;justify-content:space-around;gap:4px;
+  max-width:560px;margin:0 auto;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  background:var(--nav-bg);border-top:1px solid var(--nav-hair);
+  box-shadow:0 -8px 24px rgba(0,0,0,.28)}
+.nav button{
+  flex:1;background:none;border:0;cursor:pointer;color:var(--nav-ink);
+  font-family:var(--font-ui);display:flex;flex-direction:column;align-items:center;
+  gap:5px;padding:8px 2px;border-radius:14px;min-height:54px;justify-content:center;
+  transition:color .2s var(--ease),background .2s var(--ease)}
+.nav button .ni{font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;height:20px}
+.nav button .nl{font-size:10px;font-weight:600;letter-spacing:.02em}
+.nav button.on{color:var(--nav-ink-active);background:var(--nav-active-bg)}
+.nav button.on .ni{transform:translateY(-1px)}
+.nav button:active{transform:scale(.93)}
+
+/* ---------- Menús secundarios por pestañas (.seg) ---------- */
+.seg{
+  display:flex;gap:4px;background:var(--nav-bg);border:1px solid var(--nav-hair);
+  border-radius:12px;padding:5px;margin-bottom:18px;overflow-x:auto;
+  scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{
+  flex:1;white-space:nowrap;border:0;background:none;color:var(--nav-ink);
+  font-family:var(--font-ui);font-size:12.5px;font-weight:600;padding:10px 14px;
+  border-radius:9px;cursor:pointer;transition:background .2s var(--ease),color .2s var(--ease)}
+.seg button:hover{color:var(--nav-ink-active)}
+.seg button.on{background:var(--nav-active-bg);color:var(--nav-ink-active);box-shadow:inset 0 0 0 1px var(--nav-hair)}
+.seg button:active{transform:scale(.97)}
+
+/* ---------- Menú de Dinero en cuadrícula (.seg-grid) ---------- */
+.seg-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  background:var(--nav-bg);border:1px solid var(--nav-hair);
+  border-radius:14px;padding:6px;margin-bottom:20px}
+.seg-grid button{
+  white-space:nowrap;border:0;background:none;color:var(--nav-ink);
+  font-family:var(--font-ui);font-size:12.5px;font-weight:600;padding:11px 6px;
+  border-radius:9px;cursor:pointer;transition:background .2s var(--ease),color .2s var(--ease)}
+.seg-grid button:hover{color:var(--nav-ink-active)}
+.seg-grid button.on{background:var(--nav-active-bg);color:var(--nav-ink-active);box-shadow:inset 0 0 0 1px var(--nav-hair)}
+.seg-grid button:active{transform:scale(.97)}
+
+/* ---------- Barra interna: selector de día del horario ---------- */
+.daysel{
+  display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;padding:5px;
+  background:var(--nav-bg);border:1px solid var(--nav-hair);border-radius:12px;
+  scrollbar-width:none}
+.daysel::-webkit-scrollbar{display:none}
+.daysel button{
+  white-space:nowrap;border:0;background:none;color:var(--nav-ink);
+  border-radius:8px;padding:9px 14px;font-size:12.5px;cursor:pointer;
+  font-family:var(--font-ui);font-weight:600;transition:background .2s var(--ease),color .2s var(--ease)}
+.daysel button:hover{color:var(--nav-ink-active)}
+.daysel button.on{background:var(--nav-active-bg);color:var(--nav-ink-active)}
+
+/* ---------- FAB ---------- */
+.fab-float{
+  position:fixed;right:18px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:25;
+  width:54px;height:54px;border-radius:18px;background:var(--nav-accent);color:#fff;border:0;
+  cursor:pointer;font-size:27px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 24px rgba(0,0,0,.32);transition:transform .2s var(--ease)}
+.fab-float:active{transform:scale(.92)}
+
+/* ---------- Escritorio: barra lateral fija oscura ---------- */
+@media(min-width:900px){
+  .side{
+    display:flex;flex-direction:column;width:248px;flex:none;height:100vh;
+    position:sticky;top:0;background:var(--nav-bg);border-right:1px solid var(--nav-hair);
+    padding:24px 14px;gap:3px;overflow-y:auto}
+  .side .logo{font-weight:700;font-size:19px;padding:4px 12px 20px;color:var(--nav-ink-active);letter-spacing:-.01em}
+  .side .logo em{font-style:normal;color:var(--nav-accent)}
+  .side-grp{
+    font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--nav-ink);opacity:.65;padding:16px 14px 6px}
+  .side button{
+    display:flex;align-items:center;gap:13px;padding:11px 13px;border-radius:10px;
+    color:var(--nav-ink);cursor:pointer;font-size:14.5px;font-weight:500;background:none;
+    border:0;text-align:left;width:100%;font-family:var(--font-ui);
+    transition:background .18s var(--ease),color .18s var(--ease)}
+  .side button .si{font-size:16px;width:20px;text-align:center;flex:none;opacity:.9}
+  .side button .sl{flex:1}
+  .side button:hover{background:var(--nav-surface);color:var(--nav-ink-active)}
+  .side button.on{background:var(--nav-active-bg);color:var(--nav-ink-active);box-shadow:inset 3px 0 0 var(--nav-accent)}
+  .side .newbtn{
+    margin-top:16px;background:var(--nav-accent);color:#fff;justify-content:center;
+    font-weight:600;box-shadow:inset 0 0 0 0 transparent}
+  .side .newbtn:hover{background:var(--nav-accent);opacity:.9;color:#fff}
+  .topbar,.nav,.fab-float{display:none}
+}
