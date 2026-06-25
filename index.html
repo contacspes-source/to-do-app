@@ -960,4 +960,289 @@ function moveCard(id,dir){var i=DB.cards.findIndex(function(c){return c.id==id})
 /* modal tarjeta */
 var cardEdit=null,cardStatus=1,cardColor=CARDCOLORS[0],cardBgMode="color",cardGrad=CARDGRADS[0],cardTpl=0,cardImg="",cardPaySel="min";
 function updatePayHint(){var min=+document.getElementById("c-min").value||0,cust=+document.getElementById("c-planned").value||0;var val=cardPaySel==="custom"?cust:min;var h=document.getElementById("c-payhint");if(!h)return;h.textContent="Se registrará "+money(val)+" como pago de este periodo"+(cardPaySel==="custom"&&min>0&&cust<min?" · ⚠ menor al mínimo":"");h.style.color=(cardPaySel==="custom"&&min>0&&cust<min)?"var(--warn)":"var(--ink-3)";}
-function swa
+function swatchBtn(bgval,sel,cb){var b=document.createElement("button");b.className="pill";b.style.cssText="width:46px;height:30px;padding:0;border-color:"+(sel?"var(--ink-1)":"var(--hair)");b.innerHTML='<span style="display:block;width:100%;height:100%;border-radius:4px;background:'+bgval+'"></span>';b.onclick=cb;return b;}
+function buildColorPills(){var w=document.getElementById("c-color");w.innerHTML="";CARDCOLORS.forEach(function(col){w.appendChild(swatchBtn(col,col===cardColor&&cardBgMode==="color",function(){cardColor=col;cardBgMode="color";buildColorPills();updateCardPreview()}))})}
+function buildGradPills(){var w=document.getElementById("c-grad");w.innerHTML="";CARDGRADS.forEach(function(g){w.appendChild(swatchBtn(g,g===cardGrad&&cardBgMode==="gradient",function(){cardGrad=g;cardBgMode="gradient";buildGradPills();updateCardPreview()}))})}
+function buildTplPills(){var w=document.getElementById("c-tpl");w.innerHTML="";CARDTPL.forEach(function(t,i){w.appendChild(swatchBtn(t.bg,i===cardTpl&&cardBgMode==="template",function(){cardTpl=i;cardBgMode="template";buildTplPills();updateCardPreview()}))})}
+function previewBg(){if(cardBgMode==="image"&&cardImg)return "#222 url("+cardImg+") center/cover";if(cardBgMode==="gradient")return cardGrad;if(cardBgMode==="template")return CARDTPL[cardTpl].bg;return cardColor;}
+function updateCardPreview(){var p=document.getElementById("c-preview");if(!p)return;p.style.background=previewBg();
+var bank=document.getElementById("c-bank").value.trim(),name=document.getElementById("c-name").value.trim(),alias=document.getElementById("c-alias").value.trim(),l4=document.getElementById("c-last4").value.trim();
+document.getElementById("cp-bank").textContent=bank||name||"Banco";
+document.getElementById("cp-alias").textContent=alias||name||"Alias";
+document.getElementById("cp-logo").textContent=bank?bank.charAt(0).toUpperCase():"💳";
+document.getElementById("cp-num").textContent=l4?"•••• "+l4:"•••• ••••";}
+function showBgWrap(){document.getElementById("c-color-wrap").style.display=cardBgMode==="color"?"block":"none";document.getElementById("c-grad-wrap").style.display=cardBgMode==="gradient"?"block":"none";document.getElementById("c-tpl-wrap").style.display=cardBgMode==="template"?"block":"none";document.getElementById("c-img-wrap").style.display=cardBgMode==="image"?"block":"none";}
+function downscaleImg(file,cb){var r=new FileReader();r.onload=function(e){var im=new Image();im.onload=function(){var max=480,sc=Math.min(1,max/im.width),cw=Math.round(im.width*sc),ch=Math.round(im.height*sc);var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;cv.getContext("2d").drawImage(im,0,0,cw,ch);try{cb(cv.toDataURL("image/jpeg",0.7))}catch(err){cb(e.target.result)}};im.onerror=function(){};im.src=e.target.result};r.readAsDataURL(file)}
+function openCard(id){var c=id?cardById(id):null;cardEdit=c?c.id:null;
+document.getElementById("cardTitle").textContent=c?"Editar tarjeta":"Nueva tarjeta";
+document.getElementById("c-name").value=c?c.name:"";document.getElementById("c-bank").value=c?(c.bank||""):"";
+document.getElementById("c-alias").value=c&&c.alias?c.alias:"";document.getElementById("c-last4").value=c&&c.last4?c.last4:"";
+document.getElementById("c-limit").value=c&&c.limit?c.limit:"";document.getElementById("c-bal").value=c&&c.balance?c.balance:"";
+document.getElementById("c-cut").value=c?(c.cut||""):"";document.getElementById("c-pay").value=c?(c.pay||""):"";
+document.getElementById("c-apr").value=c&&c.apr?c.apr:"";
+document.getElementById("c-min").value=c&&c.min?c.min:"";document.getElementById("c-planned").value=c&&c.planned?c.planned:"";
+cardPaySel=c?cardPayType(c):"min";resetPills("c-paytype",cardPaySel);updatePayHint();
+cardStatus=c?(c.active===false?0:1):1;resetPills("c-status",String(cardStatus));
+cardColor=c&&c.color?c.color:CARDCOLORS[0];cardGrad=c&&c.grad?c.grad:CARDGRADS[0];cardTpl=c&&c.tpl!=null?c.tpl:0;cardImg=c&&c.img?c.img:"";cardBgMode=c&&c.bg?c.bg:"color";
+resetPills("c-bgmode",cardBgMode);showBgWrap();buildColorPills();buildGradPills();buildTplPills();updateCardPreview();
+openModal("cardModal")}
+pillGroup(document.getElementById("c-status"),function(v){cardStatus=+v});
+pillGroup(document.getElementById("c-paytype"),function(v){cardPaySel=v;updatePayHint()});
+["c-min","c-planned"].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener("input",updatePayHint)});
+pillGroup(document.getElementById("c-bgmode"),function(v){cardBgMode=v;showBgWrap();buildColorPills();buildGradPills();buildTplPills();updateCardPreview()});
+["c-name","c-bank","c-alias","c-last4"].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener("input",updateCardPreview)});
+document.getElementById("c-imgbtn").onclick=function(){document.getElementById("c-imgfile").click()};
+document.getElementById("c-imgfile").onchange=function(e){var f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;downscaleImg(f,function(d){cardImg=d;cardBgMode="image";resetPills("c-bgmode","image");showBgWrap();updateCardPreview()})};
+document.getElementById("c-imgclear").onclick=function(){cardImg="";updateCardPreview()};
+document.getElementById("c-cancel").onclick=function(){closeModal("cardModal")};
+document.getElementById("c-save").onclick=function(){var n=document.getElementById("c-name").value.trim();if(!n){document.getElementById("c-name").focus();return}
+var obj={name:n,bank:document.getElementById("c-bank").value.trim(),alias:document.getElementById("c-alias").value.trim(),last4:document.getElementById("c-last4").value.trim().slice(0,4),limit:+document.getElementById("c-limit").value||0,balance:+document.getElementById("c-bal").value||0,apr:+document.getElementById("c-apr").value||0,cut:document.getElementById("c-cut").value||"",pay:document.getElementById("c-pay").value||"",min:+document.getElementById("c-min").value||0,planned:+document.getElementById("c-planned").value||0,payType:cardPaySel,color:cardColor,grad:cardGrad,tpl:cardTpl,img:cardImg,bg:cardBgMode,active:cardStatus===1};
+if(cardEdit){Object.assign(cardById(cardEdit),obj);}else{obj.id=DB.cardSeq++;DB.cards.push(obj);}
+save();closeModal("cardModal");renderDinero("tarjetas")};
+/* simulador de pago */
+function paySim(bal,apr,pay){bal=+bal||0;pay=+pay||0;var r=(+apr||0)/100/12;if(bal<=0)return {m:0,interes:0,total:0,ok:true};if(pay<=0||(r>0&&pay<=bal*r))return {m:Infinity,interes:Infinity,total:Infinity,ok:false};var b=bal,paid=0,m=0;while(b>0.005&&m<1200){b+=b*r;var p=Math.min(pay,b);b-=p;paid+=p;m++;}return {m:m,interes:paid-bal,total:paid,ok:true};}
+var simCardId=null;
+function openSim(id){var c=cardById(id);if(!c)return;simCardId=id;
+document.getElementById("simTitle").textContent="Simular · "+c.name;
+document.getElementById("sim-info").textContent="Saldo "+money(c.balance||0)+" · interés "+(c.apr||0)+"% anual"+(c.min?" · mínimo "+money(c.min):"");
+document.getElementById("sim-amt").value=cardPay(c)||c.min||"";
+renderSim();openModal("simModal")}
+function renderSim(){var c=cardById(simCardId);if(!c)return;var pay=+document.getElementById("sim-amt").value||0;var s=paySim(c.balance,c.apr,pay);var o=document.getElementById("sim-out");
+if(!s.ok){o.innerHTML='<div class="alert" style="margin-top:12px">Con ese pago la deuda no baja (no cubre los intereses). Sube el monto.</div>';return;}
+var end=new Date();end.setMonth(end.getMonth()+s.m);
+o.innerHTML='<div class="lrow"><span>Meses para liquidar</span><b class="money">'+s.m+'</b></div><div class="lrow"><span>Fecha estimada</span><span class="money">'+end.toLocaleDateString("es-MX",{month:"short",year:"numeric"})+'</span></div><div class="lrow"><span>Intereses totales</span><span class="money" style="color:var(--warn)">'+money(s.interes)+'</span></div><div class="lrow" style="border:0"><b style="font-weight:600">Total a pagar</b><b class="money">'+money(s.total)+'</b></div>';}
+document.getElementById("sim-amt").addEventListener("input",renderSim);
+document.getElementById("sim-close").onclick=function(){closeModal("simModal")};
+document.getElementById("sim-save").onclick=function(){var c=cardById(simCardId);if(!c)return;c.planned=+document.getElementById("sim-amt").value||0;c.payType="custom";save();closeModal("simModal");renderDinero("tarjetas")};
+/* modal cuenta */
+var acctEdit=null,acctType="debito";
+function openAcct(id){var a=id?acctById(id):null;acctEdit=a?a.id:null;
+document.getElementById("acctTitle").textContent=a?"Editar cuenta":"Nueva cuenta";
+document.getElementById("a-name").value=a?a.name:"";document.getElementById("a-bank").value=a?(a.bank||""):"";
+document.getElementById("a-bal").value=a&&a.balance?a.balance:"";
+acctType=a?a.type:"debito";resetPills("a-type",acctType);
+openModal("acctModal")}
+pillGroup(document.getElementById("a-type"),function(v){acctType=v});
+document.getElementById("a-cancel").onclick=function(){closeModal("acctModal")};
+document.getElementById("a-save").onclick=function(){var n=document.getElementById("a-name").value.trim();if(!n){document.getElementById("a-name").focus();return}
+var obj={name:n,bank:document.getElementById("a-bank").value.trim(),type:acctType,balance:+document.getElementById("a-bal").value||0};
+if(acctEdit){Object.assign(acctById(acctEdit),obj);}else{obj.id=DB.accountSeq++;DB.accounts.push(obj);}
+save();closeModal("acctModal");renderDinero("debito")};
+/* modal movimiento */
+var txType="gasto",txMethod="efectivo",txSrc=null,txCat="Comida";
+pillGroup(document.getElementById("t-type"),function(v){txType=v;buildCats(v);updateMethodUI()});
+function buildCats(type){var w=document.getElementById("t-cat");w.innerHTML="";CATS[type].forEach(function(c,i){w.innerHTML+='<button class="pill'+(i===0?" sel":"")+'" data-v="'+c+'">'+c+'</button>'});txCat=CATS[type][0];pillGroup(w,function(v){txCat=v})}
+pillGroup(document.getElementById("t-method"),function(v){txMethod=v;updateMethodUI()});
+function updateMethodUI(){var wrap=document.getElementById("t-src-wrap"),lab=document.getElementById("t-src-label"),box=document.getElementById("t-src");
+if(txMethod==="efectivo"){wrap.style.display="none";var ef=DB.accounts.find(function(a){return a.type==="efectivo"});txSrc=ef?ef.id:null;return}
+wrap.style.display="block";box.innerHTML="";
+var items=txMethod==="credito"?DB.cards:DB.accounts.filter(function(a){return a.type!=="efectivo"});
+lab.textContent=txMethod==="credito"?"Tarjeta":"Cuenta";
+if(!items.length){box.innerHTML='<div class="note" style="margin:0">No hay '+(txMethod==="credito"?"tarjetas":"cuentas")+'. Agrégalas primero.</div>';txSrc=null;return}
+items.forEach(function(it,i){box.innerHTML+='<button class="pill'+(i===0?" sel":"")+'" data-v="'+it.id+'">'+esc(it.name)+'</button>'});
+txSrc=items[0].id;pillGroup(box,function(v){txSrc=v})}
+function openTx(type,cat){txType=type||"gasto";resetPills("t-type",txType);buildCats(txType);if(cat){txCat=cat;resetPills("t-cat",cat)}txMethod="efectivo";resetPills("t-method","efectivo");updateMethodUI();document.getElementById("t-amt").value="";document.getElementById("t-note").value="";openModal("txModal");setTimeout(function(){document.getElementById("t-amt").focus()},250)}
+document.getElementById("t-cancel").onclick=function(){closeModal("txModal")};
+document.getElementById("t-save").onclick=function(){var a=+document.getElementById("t-amt").value;if(!a||a<=0){document.getElementById("t-amt").focus();return}
+var t={id:DB.txSeq++,type:txType,amount:a,cat:txCat,note:document.getElementById("t-note").value.trim(),date:new Date().toISOString(),method:txMethod};
+if(txMethod==="credito")t.cardId=txSrc;else t.acctId=txSrc;
+DB.tx.push(t);applyTx(t,1);save();closeModal("txModal");renderDinero(dinSeg)};
+/* modal suscripción */
+var subEdit=null;
+function openSub(id){var s=id?(DB.subs||[]).find(function(x){return x.id==id}):null;subEdit=s?s.id:null;
+document.getElementById("subTitle").textContent=s?"Editar suscripción":"Nueva suscripción";
+document.getElementById("s-name").value=s?s.name:"";document.getElementById("s-amt").value=s&&s.amount?s.amount:"";document.getElementById("s-day").value=s?(s.day||""):"";
+openModal("subModal")}
+document.getElementById("s-cancel").onclick=function(){closeModal("subModal")};
+document.getElementById("s-save").onclick=function(){var n=document.getElementById("s-name").value.trim();if(!n){document.getElementById("s-name").focus();return}
+var obj={name:n,amount:+document.getElementById("s-amt").value||0,day:document.getElementById("s-day").value||""};
+if(subEdit){Object.assign((DB.subs||[]).find(function(x){return x.id==subEdit}),obj);}else{obj.id=DB.subSeq++;obj.active=true;DB.subs.push(obj);}
+save();closeModal("subModal");renderDinero("subs")};
+/* modal meta */
+var goalEdit=null;
+function openGoal(id){var g=id?DB.goals.find(function(x){return x.id==id}):null;goalEdit=g?g.id:null;
+document.getElementById("goalTitle").textContent=g?"Editar meta":"Nueva meta";
+document.getElementById("g-name").value=g?g.name:"";document.getElementById("g-target").value=g&&g.target?g.target:"";document.getElementById("g-saved").value=g&&g.saved?g.saved:"";
+openModal("goalModal")}
+document.getElementById("g-cancel").onclick=function(){closeModal("goalModal")};
+document.getElementById("g-save").onclick=function(){var n=document.getElementById("g-name").value.trim();if(!n){document.getElementById("g-name").focus();return}
+var obj={name:n,target:+document.getElementById("g-target").value||0,saved:+document.getElementById("g-saved").value||0};
+if(goalEdit){Object.assign(DB.goals.find(function(x){return x.id==goalEdit}),obj);}else{obj.id=DB.goalSeq++;DB.goals.push(obj);}
+save();closeModal("goalModal");renderDinero("metas")};
+
+/* ===== AJUSTES ===== */
+var ACCENTS=["#2563eb","#7c3aed","#db2777","#059669","#ea580c","#0891b2","#161616"];
+function applyAccent(){if(DB.accent)document.body.style.setProperty("--accent",DB.accent);else document.body.style.removeProperty("--accent");}
+function buildAccent(){var w=document.getElementById("set-accent");if(!w)return;w.innerHTML="";
+var def=document.createElement("button");def.className="pill"+(!DB.accent?" sel":"");def.textContent="Tema";def.onclick=function(){DB.accent="";applyAccent();save();buildAccent()};w.appendChild(def);
+ACCENTS.forEach(function(col){var b=document.createElement("button");b.className="pill";b.style.cssText="width:38px;padding:6px;border-color:"+(DB.accent===col?"var(--ink-1)":"var(--hair)");b.innerHTML='<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:'+col+'"></span>';b.onclick=function(){DB.accent=col;applyAccent();save();buildAccent()};w.appendChild(b)})}
+function renderAjustes(){var n=Object.keys(DB.mat).filter(function(k){return DB.mat[k]}).length;
+document.getElementById("setMat").textContent=n+" de 5";
+document.getElementById("themeState").textContent=DB.theme==="dark"?"Oscuro":"Claro";
+document.getElementById("th-dark").classList.toggle("on",DB.theme==="dark");
+document.getElementById("th-light").classList.toggle("on",DB.theme==="light");
+document.getElementById("set-name").value=DB.name||"";
+resetPills("set-cur",DB.cur||"MXN");buildAccent();}
+document.querySelectorAll("#ajustes .acc-h").forEach(function(b){b.onclick=function(){b.parentElement.classList.toggle("open")}});
+pillGroup(document.getElementById("set-cur"),function(v){DB.cur=v;save()});
+document.getElementById("set-name-save").onclick=function(){DB.name=document.getElementById("set-name").value.trim();save();renderHoy(hoyMode)};
+document.getElementById("set-pass-save").onclick=function(){var p=document.getElementById("set-newpass").value,m=document.getElementById("set-pass-msg");m.style.display="block";m.style.color="var(--ink-3)";if(!window.__sb){m.textContent="Inicia sesión primero para cambiar tu contraseña.";return}if(!p||p.length<6){m.textContent="La contraseña debe tener 6+ caracteres.";return}m.textContent="Cambiando…";window.__sb.auth.updateUser({password:p}).then(function(r){m.style.color=r.error?"var(--warn)":"var(--ink-1)";m.textContent=r.error?("Error: "+r.error.message):"Contraseña actualizada.";if(!r.error)document.getElementById("set-newpass").value=""});};
+document.getElementById("resetHab").onclick=function(){if(confirm("¿Reiniciar los hábitos de la semana?")){DB.habitLog={};save();}};
+document.getElementById("resetAll").onclick=function(){if(confirm("¿Restablecer todo a los datos de ejemplo? Se borra tu progreso.")){LS.removeItem(KEY);location.reload()}};
+
+/* ===== exportar / importar datos ===== */
+function ioMessage(txt,ok){var m=document.getElementById("ioMsg");if(!m)return;m.style.display="block";m.textContent=txt;m.style.color=ok?"var(--ink-1)":"var(--warn)";}
+function validData(d){
+if(!d||typeof d!=="object"||Array.isArray(d))return false;
+if(!Array.isArray(d.tasks))return false;
+var objKeys=["mat","matProg","schedEdit","habitLog","history"];
+for(var i=0;i<objKeys.length;i++){var k=objKeys[i];if(d[k]!==undefined&&(typeof d[k]!=="object"||d[k]===null))return false;}
+if(d.habits!==undefined&&!Array.isArray(d.habits))return false;
+if(d.cards!==undefined&&!Array.isArray(d.cards))return false;
+if(d.tx!==undefined&&!Array.isArray(d.tx))return false;
+if(d.accounts!==undefined&&!Array.isArray(d.accounts))return false;
+if(d.subs!==undefined&&!Array.isArray(d.subs))return false;
+if(d.goals!==undefined&&!Array.isArray(d.goals))return false;
+return true;
+}
+document.getElementById("exportData").onclick=function(){
+try{
+var payload={app:"misem",key:KEY,version:3,exportedAt:new Date().toISOString(),data:DB};
+var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+var url=URL.createObjectURL(blob);
+var a=document.createElement("a");
+a.href=url;a.download="mi-semestre-"+new Date().toISOString().slice(0,10)+".json";
+document.body.appendChild(a);a.click();a.remove();
+setTimeout(function(){URL.revokeObjectURL(url)},1000);
+ioMessage("Datos exportados correctamente.",true);
+}catch(e){ioMessage("No se pudo exportar: "+e.message,false);}
+};
+document.getElementById("importBtn").onclick=function(){document.getElementById("importFile").click()};
+document.getElementById("importFile").onchange=function(e){
+var file=e.target.files&&e.target.files[0];
+e.target.value="";
+if(!file)return;
+var reader=new FileReader();
+reader.onerror=function(){ioMessage("No se pudo leer el archivo.",false)};
+reader.onload=function(ev){
+var parsed;
+try{parsed=JSON.parse(ev.target.result)}
+catch(err){ioMessage("Archivo inválido: no es un JSON legible.",false);return}
+var incoming=(parsed&&parsed.data!==undefined)?parsed.data:parsed;
+if(!validData(incoming)){ioMessage("El archivo no tiene el formato de Mi semestre. No se cambió nada.",false);return}
+if(!confirm("Esto reemplazará tus datos actuales con los del archivo. ¿Continuar?"))return;
+try{
+LS.setItem(KEY,JSON.stringify(incoming));
+ioMessage("Datos importados. Recargando…",true);
+setTimeout(function(){location.reload()},600);
+}catch(err2){ioMessage("No se pudo guardar la importación: "+err2.message,false)}
+};
+reader.readAsText(file);
+};
+
+/* ===== modales util ===== */
+function openModal(id){document.getElementById(id).classList.add("on")}
+function closeModal(id){document.getElementById(id).classList.remove("on")}
+["blkModal","cardModal","acctModal","txModal","subModal","goalModal","simModal"].forEach(function(id){document.getElementById(id).onclick=function(e){if(e.target===this)closeModal(id)}});
+
+renderHoy("hoy");
+</script>
+
+<!-- ===== Supabase: autenticación + sincronización en la nube ===== -->
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+(function(){
+  var SB_URL="https://cuqenhfzkndhskwrzgke.supabase.co";
+  var SB_KEY="sb_publishable_APCtD2LvYjNQGjDxz_AAfQ_Sy0PyAv1";
+  var KEY="misem_v2";
+  var sb;
+  try{ sb=createClient(SB_URL,SB_KEY); }catch(e){ console.error("Supabase init falló",e); return; }
+  window.__sb=sb;
+  var currentUser=null, pushTimer=null, loginRunning=false;
+  function $(id){return document.getElementById(id);}
+  function setAcc(html){ var s=$("acc-status"); if(s) s.innerHTML=html; }
+  function msg(t,ok){ var m=$("acc-msg"); if(!m)return; m.style.display=t?"block":"none"; m.textContent=t||""; m.style.color=ok?"var(--ink-1)":"var(--warn)"; }
+  function showAuthed(on){ var f=$("acc-forms"), o=$("acc-out"); if(f) f.style.display=on?"none":"block"; if(o) o.style.display=on?"block":"none"; }
+
+  async function cloudPull(){
+    if(!currentUser) return null;
+    var res=await sb.from("app_state").select("data").eq("user_id",currentUser.id).maybeSingle();
+    if(res.error){ console.warn("pull",res.error); return null; }
+    return res.data ? res.data.data : null;
+  }
+  async function cloudPush(){
+    if(!currentUser) return;
+    var raw=localStorage.getItem(KEY); if(!raw) return;
+    var data; try{ data=JSON.parse(raw); }catch(e){ return; }
+    var res=await sb.from("app_state").upsert({user_id:currentUser.id,data:data},{onConflict:"user_id"});
+    if(res.error) console.warn("push",res.error);
+  }
+  function schedulePush(){ if(!currentUser) return; clearTimeout(pushTimer); pushTimer=setTimeout(cloudPush,1200); }
+
+  if(typeof window.save==="function"){
+    var _origSave=window.save;
+    window.save=function(){ _origSave.apply(this,arguments); schedulePush(); };
+  }
+
+  async function onLogin(){
+    if(loginRunning) return; loginRunning=true;
+    showAuthed(true);
+    var em=currentUser.email||"";
+    setAcc("Sesión: <b>"+em+"</b> · sincronizando…");
+    var cloud=await cloudPull();
+    var localRaw=localStorage.getItem(KEY);
+    if(cloud){
+      var cloudStr=JSON.stringify(cloud);
+      if(cloudStr!==localRaw){
+        localStorage.setItem(KEY,cloudStr);
+        setAcc("Sesión: <b>"+em+"</b> · datos cargados. Recargando…");
+        setTimeout(function(){ location.reload(); },500);
+        return;
+      }
+      setAcc("Sesión: <b>"+em+"</b> · sincronizado ✓");
+    }else{
+      await cloudPush();
+      setAcc("Sesión: <b>"+em+"</b> · sincronizado ✓");
+    }
+    loginRunning=false;
+  }
+  function onLogout(){
+    currentUser=null; showAuthed(false);
+    setAcc("Sin sesión · los datos se guardan solo en este dispositivo.");
+  }
+
+  sb.auth.onAuthStateChange(function(_e,session){
+    currentUser = (session && session.user) ? session.user : null;
+    if(currentUser) onLogin(); else onLogout();
+  });
+
+  var inEmail=$("acc-email"), inPass=$("acc-pass");
+  var bIn=$("acc-signin"), bUp=$("acc-signup"), bOut=$("acc-signout");
+  if(bIn) bIn.onclick=async function(){
+    var em=(inEmail.value||"").trim(), pw=inPass.value||"";
+    if(!em||!pw){ msg("Escribe email y contraseña.",false); return; }
+    msg("Iniciando sesión…",true);
+    var r=await sb.auth.signInWithPassword({email:em,password:pw});
+    if(r.error) msg("Error: "+r.error.message,false); else { msg("",true); inPass.value=""; }
+  };
+  if(bUp) bUp.onclick=async function(){
+    var em=(inEmail.value||"").trim(), pw=inPass.value||"";
+    if(!em||pw.length<6){ msg("Email válido y contraseña de 6+ caracteres.",false); return; }
+    msg("Creando cuenta…",true);
+    var r=await sb.auth.signUp({email:em,password:pw});
+    if(r.error){ msg("Error: "+r.error.message,false); return; }
+    if(r.data && r.data.session){ msg("Cuenta creada e iniciada.",true); inPass.value=""; }
+    else { msg("Cuenta creada. Revisa tu correo para confirmar y luego inicia sesión.",true); }
+  };
+  if(bOut) bOut.onclick=async function(){ await sb.auth.signOut(); msg("Sesión cerrada.",true); };
+
+  sb.auth.getSession().then(function(res){
+    var s=(res.data)?res.data.session:null;
+    var u=(s&&s.user)?s.user:null;
+    if(u && !currentUser){ currentUser=u; onLogin(); }
+    else if(!u && !currentUser){ onLogout(); }
+  });
+})();
+</script>
+</body>
+</html>
