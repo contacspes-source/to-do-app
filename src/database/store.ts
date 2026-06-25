@@ -45,7 +45,14 @@ function migrate() {
   DB.cur = DB.cur || "MXN";
   // ---- MealPrep ----
   if (!DB.foodProfile) DB.foodProfile = { height: 178, weight: 67, activity: "none", goal: "recomp", waterTargetL: 3 };
+  if (DB.foodProfile.targetWeight == null) DB.foodProfile.targetWeight = 70;
   DB.mealPlan = DB.mealPlan || {};
+  DB.weightLog = DB.weightLog || [];
+  DB.measurements = DB.measurements || [];
+  DB.bodyPhotos = DB.bodyPhotos || [];
+  DB.waterLog = DB.waterLog || {};
+  DB.planLog = DB.planLog || {};
+  DB.mealsLog = DB.mealsLog || {};
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }

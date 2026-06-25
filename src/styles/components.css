@@ -149,3 +149,33 @@
 .lrow .ld{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
 .alert{border:1px solid var(--warn);background:var(--warn-dim);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.4;margin-bottom:8px}
 @media(min-width:900px){.stat-row{gap:14px}.stat .n{font-size:24px}.cinfo{grid-template-columns:1fr 1fr 1fr 1fr}}
+
+/* ---- Dashboard financiero ---- */
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dash-card{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--bg-soft);border:1px solid var(--hair);border-radius:var(--r-card);padding:14px;cursor:pointer;font-family:var(--font-ui);transition:border-color .2s var(--ease),transform .1s var(--ease)}
+.dash-card:hover{border-color:var(--hair-2)}
+.dash-card:active{transform:scale(.98)}
+.dash-card .dc-ic{font-size:22px;line-height:1}
+.dash-card .dc-name{font-weight:600;font-size:14px;color:var(--ink-1);margin-top:5px;line-height:1.2}
+.dash-card .dc-desc{font-size:11.5px;color:var(--ink-3);line-height:1.35;margin-top:1px}
+.dash-card .dc-ind{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin-top:7px;font-weight:600}
+@media(min-width:900px){.dash{grid-template-columns:1fr 1fr 1fr}}
+
+/* ---- Tarjeta de crédito estilo banca ---- */
+.bankc .bp{margin-top:14px}
+.bankc .bp-k{font-size:10.5px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.04em}
+.bankc .bp-v{font-family:var(--font-mono);font-weight:600;font-size:26px;letter-spacing:-.01em;margin-top:2px}
+.bankc .bp-row{display:flex;gap:16px;margin-top:10px}
+.bankc .bp-row>div{flex:1}
+.paybox{margin-top:14px;border:1px solid var(--hair);border-radius:10px;padding:12px;background:var(--bg)}
+.paybox .pb-h{font-size:10.5px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.paybox .pb-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;padding:4px 0}
+.paybox .pb-row b{font-family:var(--font-mono)}
+.paybox .pb-app{border-top:1px solid var(--hair);margin-top:4px;padding-top:8px}
+.paybox .tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-3)}
+.ccmain{margin-top:12px}
+.ccmain button{flex:1 1 calc(50% - 4px)}
+.ccmain button.cc-pay{border-color:var(--accent);color:var(--accent);font-weight:600}
+.ccmain button.cc-pay:hover{background:var(--accent);color:var(--accent-ink)}
+.ccsec{margin-top:6px}
+.ccsec button{font-size:12px;color:var(--ink-3)}

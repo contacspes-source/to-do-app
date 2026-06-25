@@ -34,7 +34,7 @@ export function go(id: string) {
 export function goMoney(seg: string) { setDineroSeg(seg); go("dinero"); }
 
 export function initRouter() {
-  qsa<HTMLElement>("[data-go]").forEach((b) => (b.onclick = () => go(b.dataset.go!)));
+  qsa<HTMLElement>("[data-go]").forEach((b) => (b.onclick = () => { if (b.dataset.go === "dinero") setDineroSeg("home"); go(b.dataset.go!); }));
   qsa<HTMLElement>("[data-money]").forEach((b) => (b.onclick = () => goMoney(b.dataset.money!)));
   $("gear").onclick = () => go("ajustes");
 

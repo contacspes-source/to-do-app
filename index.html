@@ -59,14 +59,13 @@
 <!-- DINERO -->
 <section class="screen" id="dinero">
 <div class="h-screen">Tu dinero</div>
-<div class="seg-grid" id="dinseg"><button class="on" data-v="resumen">Resumen</button><button data-v="tarjetas">Crédito</button><button data-v="debito">Débito</button><button data-v="deuda">Deuda</button><button data-v="calendario">Calendario</button><button data-v="subs">Suscrip.</button><button data-v="metas">Metas</button><button data-v="proy">Proyección</button><button data-v="movs">Movimientos</button></div>
 <div id="dinBody"></div>
 </section>
 
 <!-- COMIDA -->
 <section class="screen" id="comida">
 <div class="h-screen">Comida</div>
-<div class="seg" id="comidaseg"><button class="on" data-v="plan">Plan</button><button data-v="recetas">Recetas</button><button data-v="super">Súper</button><button data-v="perfil">Perfil</button><button data-v="guia">Guía</button></div>
+<div class="seg" id="comidaseg"><button class="on" data-v="plan">Plan</button><button data-v="recetas">Recetas</button><button data-v="super">Súper</button><button data-v="perfil">Perfil</button><button data-v="progreso">Progreso</button></div>
 <div id="comidaBody"></div>
 </section>
 
@@ -196,13 +195,13 @@
 <div class="field" id="c-img-wrap" style="display:none"><span class="label">Imagen de fondo</span><input type="file" id="c-imgfile" accept="image/*" style="display:none"><button class="btn btn-ghost" id="c-imgbtn" type="button">Subir imagen…</button><div style="height:8px"></div><button class="btn btn-ghost" id="c-imgclear" type="button">Quitar imagen</button><div class="note" id="c-imgnote" style="margin-top:8px">Se reduce a ~480px para ocupar poco y poder sincronizarse.</div></div>
 <button class="btn btn-primary" id="c-save">Guardar tarjeta</button><div style="height:10px"></div><button class="btn btn-ghost" id="c-cancel">Cancelar</button>
 </div></div>
-<!-- MODAL pago rapido (Cambiar pago) -->
-<div class="modal" id="payModal"><div class="sheet"><h3 id="payTitle">Cambiar pago</h3>
+<!-- MODAL Pago del mes (mínimo + programado unificados) -->
+<div class="modal" id="payModal"><div class="sheet"><h3 id="payTitle">Pago del mes</h3>
 <div class="note" id="pay-info" style="margin-top:0"></div>
-<div class="field" style="margin-top:12px"><span class="label">Tipo de pago</span><div class="pills" id="pay-type"><button class="pill sel" data-v="min">Pago mínimo</button><button class="pill" data-v="custom">Pago mensual</button></div></div>
-<div class="field" id="pay-custom-wrap" style="display:none"><span class="label">Monto mensual</span><input class="input mono" id="pay-amt" type="number" inputmode="decimal" placeholder="0"></div>
+<div class="field row2" style="margin-top:12px"><div><span class="label">Pago mínimo</span><input class="input mono" id="pay-min" type="number" inputmode="decimal" placeholder="0"></div><div><span class="label">Pago programado</span><input class="input mono" id="pay-prog" type="number" inputmode="decimal" placeholder="0"></div></div>
+<div class="field"><span class="label">Aplicar este mes</span><div class="pills" id="pay-which"><button class="pill sel" data-v="min">Mínimo</button><button class="pill" data-v="custom">Programado</button></div></div>
 <div class="note" id="pay-hint" style="margin-top:4px"></div>
-<button class="btn btn-primary" id="pay-save">Guardar pago</button><div style="height:10px"></div><button class="btn btn-ghost" id="pay-cancel">Cancelar</button>
+<button class="btn btn-primary" id="pay-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="pay-cancel">Cancelar</button>
 </div></div>
 <!-- MODAL simulador de pago -->
 <div class="modal" id="simModal"><div class="sheet"><h3 id="simTitle">Simulador de pago</h3>

@@ -55,22 +55,22 @@ export function openCard(id?: any) {
   openModal("cardModal");
 }
 
-/* ============ Pago rápido (Modificar pago) ============ */
+/* ============ Pago del mes (mínimo + programado unificados) ============ */
 let payCardId: any = null, paySel: "min" | "custom" = "min";
 function updatePayModalHint() {
-  const c = cardById(payCardId); if (!c) return;
-  const min = +(c.min || 0); const cust = +$<HTMLInputElement>("pay-amt").value || 0;
-  const val = paySel === "custom" ? cust : min; const diff = val - min;
+  const min = +$<HTMLInputElement>("pay-min").value || 0, prog = +$<HTMLInputElement>("pay-prog").value || 0;
+  const applied = paySel === "custom" ? prog : min; const diff = applied - min;
   const h = $("pay-hint"); if (!h) return;
-  h.innerHTML = "Pago a registrar: <b>" + money(val) + "</b>" + (min > 0 ? " · Mínimo " + money(min) + " · Diferencia " + (diff >= 0 ? "+" : "") + money(diff) : "") + (paySel === "custom" && min > 0 && cust < min ? ' · <span style="color:var(--warn)">⚠ menor al mínimo</span>' : "");
+  h.innerHTML = "Se aplica este mes: <b>" + money(applied) + "</b> (" + (paySel === "custom" ? "programado" : "mínimo") + ")" + (min > 0 ? " · diferencia vs mínimo " + (diff >= 0 ? "+" : "") + money(diff) : "") + (paySel === "custom" && min > 0 && prog < min ? ' · <span style="color:var(--warn)">⚠ menor al mínimo</span>' : "");
 }
 export function openPay(id: any) {
   const c = cardById(id); if (!c) return; payCardId = id;
-  $("payTitle").textContent = "Modificar pago · " + c.name;
-  $("pay-info").textContent = "Saldo " + money(c.balance || 0) + (c.min ? " · mínimo " + money(c.min) : "") + " · este pago aplica solo a este mes.";
-  paySel = cardPayType(c); resetPills("pay-type", paySel);
-  $("pay-custom-wrap").style.display = paySel === "custom" ? "block" : "none";
-  $<HTMLInputElement>("pay-amt").value = paySel === "custom" ? String(cardPay(c) || c.min || "") : String(c.min || "");
+  $("payTitle").textContent = "Pago del mes · " + c.name;
+  $("pay-info").textContent = "Saldo " + money(c.balance || 0) + " · edita el mínimo y el programado; aplica solo a este mes.";
+  paySel = cardPayType(c);
+  $<HTMLInputElement>("pay-min").value = String(c.min || "");
+  $<HTMLInputElement>("pay-prog").value = String(c.planned || "");
+  resetPills("pay-which", paySel);
   updatePayModalHint(); openModal("payModal");
 }
 
@@ -112,9 +112,12 @@ function updateMethodUI() {
   items.forEach((it, i) => (box.innerHTML += '<button class="pill' + (i === 0 ? " sel" : "") + '" data-v="' + it.id + '">' + esc(it.name) + '</button>'));
   txSrc = items[0].id; pillGroup(box, (v) => (txSrc = v));
 }
-export function openTx(type?: string, cat?: string) {
+export function openTx(type?: string, cat?: string, opts?: { method?: string; cardId?: any; acctId?: any }) {
   txType = type || "gasto"; resetPills("t-type", txType); buildCats(txType); if (cat) { txCat = cat; resetPills("t-cat", cat); }
-  txMethod = "efectivo"; resetPills("t-method", "efectivo"); updateMethodUI();
+  txMethod = opts?.method || "efectivo"; resetPills("t-method", txMethod); updateMethodUI();
+  if (opts && (opts.cardId != null || opts.acctId != null)) {
+    const id = opts.cardId != null ? opts.cardId : opts.acctId; txSrc = id; resetPills("t-src", String(id));
+  }
   $<HTMLInputElement>("t-amt").value = ""; $<HTMLInputElement>("t-note").value = ""; openModal("txModal"); setTimeout(() => $("t-amt").focus(), 250);
 }
 
@@ -173,14 +176,15 @@ export function initModals() {
     save(); closeModal("cardModal"); renderDinero("tarjetas");
   };
 
-  // pago rápido
-  pillGroup($("pay-type"), (v) => { paySel = v as any; $("pay-custom-wrap").style.display = paySel === "custom" ? "block" : "none"; updatePayModalHint(); });
-  $("pay-amt").addEventListener("input", updatePayModalHint);
+  // pago del mes
+  pillGroup($("pay-which"), (v) => { paySel = v as any; updatePayModalHint(); });
+  ["pay-min", "pay-prog"].forEach((id) => $(id)?.addEventListener("input", updatePayModalHint));
   $("pay-cancel").onclick = () => closeModal("payModal");
   $("pay-save").onclick = () => {
     const c = cardById(payCardId); if (!c) return;
+    c.min = +$<HTMLInputElement>("pay-min").value || 0;
+    c.planned = +$<HTMLInputElement>("pay-prog").value || 0;
     c.payType = paySel;
-    if (paySel === "custom") c.planned = +$<HTMLInputElement>("pay-amt").value || 0;
     save(); closeModal("payModal"); renderDinero("tarjetas");
   };
 

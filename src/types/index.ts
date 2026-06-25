@@ -42,7 +42,12 @@ export interface FoodProfile {
   activity: "none" | "light" | "moderate" | "high";
   goal: "recomp" | "muscle" | "deficit" | "maintain";
   waterTargetL: number;  // litros/día
+  targetWeight?: number; // kg objetivo
 }
+
+export interface WeightEntry { date: string; kg: number; }
+export interface Measurement { date: string; waist?: number; chest?: number; hip?: number; arm?: number; thigh?: number; notes?: string; }
+export interface BodyPhoto { date: string; img: string; }
 
 export interface AppState {
   theme: "light" | "dark";
@@ -66,4 +71,11 @@ export interface AppState {
   foodProfile?: FoodProfile;
   mealPlan?: Record<string, string>; // slot -> id de receta
   mealPlanWeek?: string;             // semana ISO del plan vigente
+  // ---- Seguimiento físico (MealPrep) ----
+  weightLog?: WeightEntry[];
+  measurements?: Measurement[];
+  bodyPhotos?: BodyPhoto[];
+  waterLog?: Record<string, number>; // dateKey -> litros registrados
+  planLog?: Record<string, boolean>; // dateKey -> siguió el plan
+  mealsLog?: Record<string, boolean>;// dateKey -> registró comidas
 }
