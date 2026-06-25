@@ -4,7 +4,7 @@ Organizador personal de Jorge: **académico + Finanzas + MealPrep**, en una sola
 Antes era un archivo HTML gigante; ahora es un proyecto **TypeScript + Vite** modular,
 limpio y escalable, conservando tus datos (mismo `localStorage` y mismo Supabase).
 
-## Cómo correrla en tu compu
+## Cómo correrla en tu compu 
 
 ```bash
 npm install      # solo la primera vez
