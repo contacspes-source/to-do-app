@@ -24,6 +24,7 @@
   --nav-hair:#262630;        /* divisores */
 }
 [data-theme="dark"]{
+  color-scheme: dark;
   --bg:#121212;--bg-soft:#181818;
   --ink-1:#f1f1f1;--ink-2:#a6a6a6;--ink-3:#7a7a7a;--ink-4:#535353;
   --hair:#272727;--hair-2:#393939;

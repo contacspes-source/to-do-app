@@ -11,12 +11,16 @@ import { renderDinero, setDineroSeg } from "./pages/dinero";
 import { renderComida } from "./pages/comida";
 import { renderAjustes } from "./pages/ajustes";
 
+let currentScreen = "hoy";
+const MAIN_SCREENS = ["hoy", "plan", "habitos", "dinero", "comida", "ajustes"];
 const TITLES: Record<string, string> = {
   hoy: "Hoy", plan: "Plan", habitos: "Constancia", dinero: "Dinero",
   comida: "Comida", add: "Nueva tarea", detalle: "Detalle", ajustes: "Ajustes",
 };
 
 export function go(id: string) {
+  currentScreen = id;
+  if (MAIN_SCREENS.includes(id)) { try { localStorage.setItem("misem_screen", id); } catch {} }
   qsa(".screen").forEach((s) => s.classList.remove("on"));
   $(id)?.classList.add("on");
   qsa<HTMLElement>("[data-go]").forEach((b) => b.classList.toggle("on", b.dataset.go === id));
@@ -32,6 +36,11 @@ export function go(id: string) {
 
 /** Atajo a una pestaña de Dinero (p. ej. desde el sidebar o Ajustes). */
 export function goMoney(seg: string) { setDineroSeg(seg); go("dinero"); }
+
+/** Pantalla guardada (para restaurar al cargar). */
+export function savedScreen(): string { try { return localStorage.getItem("misem_screen") || "hoy"; } catch { return "hoy"; } }
+/** Re-renderiza la pantalla actual (tras recibir datos de la nube). */
+export function rerenderCurrent() { go(MAIN_SCREENS.includes(currentScreen) ? currentScreen : "hoy"); }
 
 export function initRouter() {
   qsa<HTMLElement>("[data-go]").forEach((b) => (b.onclick = () => { if (b.dataset.go === "dinero") setDineroSeg("home"); go(b.dataset.go!); }));

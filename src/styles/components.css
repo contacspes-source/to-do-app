@@ -212,3 +212,37 @@
 .dv-meal{padding:12px 0;border-bottom:1px solid var(--hair)}
 .dv-meal:last-child{border-bottom:0}
 .dv-meal .dv-slot{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-4)}
+
+/* ---- MealPrep: cabecera de comida + botón ayuda ---- */
+.dv-mhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rc-help{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid var(--hair-2);background:transparent;color:var(--ink-2);font-weight:700;font-size:13px;cursor:pointer;line-height:1;transition:background .2s var(--ease),color .2s var(--ease),border-color .2s var(--ease)}
+.rc-help:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* ---- Modales centrados con backdrop y animación (override) ---- */
+.modal{align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(0,0,0,.5);backdrop-filter:blur(2px)}
+.modal.on{animation:modalFade .18s var(--ease)}
+.sheet{border-radius:16px;max-width:440px;max-height:88vh;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:modalPop .22s var(--ease)}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+@keyframes modalPop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.modal.on,.sheet{animation:none}}
+
+/* ---- Iconos del dashboard: contraste + hover/activo ---- */
+.dash-card .dc-ic{color:var(--ink-2);transition:color .2s var(--ease),transform .15s var(--ease)}
+.dash-card:hover .dc-ic{color:var(--accent);transform:translateY(-1px)}
+.nav button svg,.side button svg{transition:transform .15s var(--ease)}
+.nav button.on svg,.side button.on svg{transform:translateY(-1px)}
+
+/* ---- Finanzas: 4 preguntas clave ---- */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.qcard{border:1px solid var(--hair);border-radius:var(--r-card);background:var(--bg-soft);padding:14px}
+.qcard .ql{font-size:11px;color:var(--ink-3);font-weight:600}
+.qcard .qv{font-family:var(--font-mono);font-weight:600;font-size:20px;margin-top:6px;letter-spacing:-.01em}
+.qcard .qv.warn{color:var(--warn)}
+.qcard .qv2{font-size:13px;color:var(--ink-1);margin-top:6px;line-height:1.35}
+.lnk{background:none;border:0;color:var(--accent);font-weight:600;font-size:12px;cursor:pointer;font-family:var(--font-ui);text-transform:none;letter-spacing:0}
+.dash-card{position:relative}
+.dash-card.dimmed{opacity:.5}
+.dc-pin{position:absolute;top:10px;right:12px;color:var(--accent);font-size:9px}
+.dc-edit{display:flex;gap:6px;margin-top:8px}
+.dc-edit button{flex:1;border:1px solid var(--hair);background:transparent;color:var(--ink-2);border-radius:7px;padding:5px 4px;font-size:11px;cursor:pointer;font-family:var(--font-ui)}
+.dc-edit button:hover{border-color:var(--ink-1);color:var(--ink-1)}

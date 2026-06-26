@@ -8,6 +8,7 @@ import { $, qsa, pillGroup, resetPills, openModal, closeModal } from "../utils/d
 import { esc, money } from "../utils/format";
 import { CATEGORIES } from "../config/app";
 import { CARDCOLORS, CARDGRADS, CARDTPL, cardById, cardPayType } from "../finance/cards";
+import { recipeById, recipeInfo, recipeMacros } from "../database/recipes";
 import { applyTx } from "../finance/calc";
 import { renderDinero } from "../pages/dinero";
 
@@ -146,6 +147,18 @@ export function openBuyGrocery(onDone?: () => void) {
   $<HTMLInputElement>("buy-amt").value = ""; $<HTMLInputElement>("buy-note").value = ""; openModal("buyModal"); setTimeout(() => $("buy-amt").focus(), 250);
 }
 
+/* ============ Receta (modal de ayuda ?) ============ */
+export function openRecipe(id: string) {
+  const r = recipeById(id); if (!r) return;
+  const m = recipeMacros(id), info = recipeInfo(r);
+  $("rc-title").textContent = r.name;
+  $("rc-meta").innerHTML = esc(r.protein) + " · " + m.kcal + " kcal · " + esc(info.time);
+  $("rc-ing").innerHTML = r.ingredients.map((i) => '<div class="lrow"><span>' + esc(i.item) + '</span><span class="ld">' + esc(i.qty) + '</span></div>').join("");
+  $("rc-prep").textContent = r.prep;
+  $("rc-keep").textContent = info.keep;
+  openModal("recipeModal");
+}
+
 /* ============ Wiring de botones estáticos ============ */
 export function initModals() {
   // tarjeta
@@ -203,6 +216,7 @@ export function initModals() {
 
   // compra de súper -> Finanzas
   pillGroup($("buy-method"), (v) => { buyMethod = v; updateBuyMethodUI(); });
+  $("rc-close").onclick = () => closeModal("recipeModal");
   $("buy-skip").onclick = () => { closeModal("buyModal"); if (buyDone) buyDone(); };
   $("buy-save").onclick = () => {
     const a = +$<HTMLInputElement>("buy-amt").value; if (!a || a <= 0) { $("buy-amt").focus(); return; }
@@ -212,5 +226,5 @@ export function initModals() {
   };
 
   // cerrar al tocar el fondo
-  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
+  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
 }

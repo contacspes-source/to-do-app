@@ -6,10 +6,10 @@ import "./styles/base.css";
 import "./styles/nav.css";
 import "./styles/components.css";
 
-import { DB } from "./database/store";
+import { DB, onReplace } from "./database/store";
 import { $, qsa } from "./utils/dom";
 import { icon } from "./components/icons";
-import { initRouter, go } from "./router";
+import { initRouter, go, savedScreen, rerenderCurrent } from "./router";
 import { initModals } from "./components/modals";
 import { initHoy } from "./pages/hoy";
 import { initAdd, openAdd } from "./pages/tarea-nueva";
@@ -57,5 +57,8 @@ initIcons();
 initSync();
 startReminderWatcher();
 
-// pantalla inicial
-go("hoy");
+// re-render al sincronizar datos de la nube (sin recargar)
+onReplace(rerenderCurrent);
+
+// pantalla inicial: restaura la última que usaste
+go(savedScreen());

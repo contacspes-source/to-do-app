@@ -85,4 +85,6 @@ export interface AppState {
   pantry?: PantryItem[]; pantrySeq?: number;
   reminders?: Reminders;
   review?: Record<string, boolean>;  // claveSemana::item -> hecho
+  finPins?: string[];   // accesos de Finanzas fijados
+  finHidden?: string[]; // accesos de Finanzas ocultos
 }

@@ -58,6 +58,8 @@ function migrate() {
   DB.pantrySeq = DB.pantrySeq || 1;
   DB.reminders = DB.reminders || { enabled: false, desayuno: "07:00", comida: "14:00", cena: "21:00", groceryDay: 0 };
   DB.review = DB.review || {};
+  DB.finPins = DB.finPins || [];
+  DB.finHidden = DB.finHidden || [];
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }
@@ -68,5 +70,11 @@ export function onSave(fn: () => void) { syncHook = fn; }
 
 /** Guarda local y dispara sync nube. Único punto de escritura. */
 export function save() { persist(); if (syncHook) syncHook(); }
+
+/** Hook para re-render cuando llegan datos de la nube (sin recargar la página). */
+let replaceHook: (() => void) | null = null;
+export function onReplace(fn: () => void) { replaceHook = fn; }
+/** Reemplaza el estado en memoria con datos de la nube y re-renderiza. */
+export function setDB(data: AppState) { DB = data; migrate(); persist(); if (replaceHook) replaceHook(); }
 
 export { dk, STORAGE_KEY };

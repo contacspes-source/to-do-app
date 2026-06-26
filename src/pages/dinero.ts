@@ -17,6 +17,7 @@ import { icon } from "../components/icons";
 
 let dinSeg = "home";
 let proyH = 1;
+let dashEdit = false;
 let histCard: any = null; // filtro de historial por tarjeta
 
 export function setDineroSeg(seg: string) { dinSeg = seg; }
@@ -45,18 +46,44 @@ function dashItems(): DashItem[] {
   ];
 }
 function renderDashboard(w: HTMLElement) {
+  const cash = totalDebito(), deuda = totalDebt();
   const alerts = computeAlerts();
-  let h = '<div class="card-pad" style="text-align:center"><div class="l" style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono)">Disponible en cuentas</div><div class="big-money" style="margin-top:8px">' + money(totalDebito()) + '</div></div>';
-  if (alerts.length) { h += '<div class="sect">Alertas</div>'; alerts.slice(0, 4).forEach((a) => (h += '<div class="alert">' + esc(a) + '</div>')); }
-  h += '<div class="sect">Módulos</div><div class="dash">';
-  dashItems().forEach((it) => {
-    h += '<button class="dash-card" data-dash="' + it.key + '"><span class="dc-ic">' + icon(it.icon, 22) + '</span><span class="dc-name">' + it.name + '</span><span class="dc-desc">' + it.desc + '</span><span class="dc-ind">' + it.ind() + '</span></button>';
+  // próximo vencimiento (tarjeta o suscripción)
+  const today = new Date(); let nextTxt = "Nada cercano"; let nextDays = 9999;
+  DB.cards.forEach((c) => { if (c.active !== false && (c.balance || 0) > 0 && c.pay) { const d = nextDateForDay(+c.pay); const dd = Math.round((+d - +today) / 864e5); if (dd < nextDays) { nextDays = dd; nextTxt = "Pago " + c.name + " · " + (dd === 0 ? "hoy" : dd + "d"); } } });
+  (DB.subs || []).forEach((sb) => { if (sb.active !== false && sb.day) { const d = nextDateForDay(+sb.day); const dd = Math.round((+d - +today) / 864e5); if (dd < nextDays) { nextDays = dd; nextTxt = sb.name + " · " + (dd === 0 ? "hoy" : dd + "d"); } } });
+
+  // 4 preguntas clave
+  let h = '<div class="qgrid">' +
+    '<div class="qcard"><div class="ql">¿Cuánto tengo?</div><div class="qv">' + money(cash) + '</div></div>' +
+    '<div class="qcard"><div class="ql">¿Cuánto debo?</div><div class="qv' + (deuda > 0 ? " warn" : "") + '">' + money(deuda) + '</div></div>' +
+    '<div class="qcard"><div class="ql">¿Qué vence pronto?</div><div class="qv2">' + esc(nextTxt) + '</div></div>' +
+    '<div class="qcard"><div class="ql">¿Qué hacer ahora?</div><div class="qv2">' + (alerts.length ? esc(alerts[0]) : "Todo en orden") + '</div></div>' +
+    '</div>';
+  if (alerts.length > 1) { h += '<div class="sect">Alertas</div>'; alerts.slice(1, 4).forEach((a) => (h += '<div class="alert">' + esc(a) + '</div>')); }
+
+  // accesos (configurables: fijar / ocultar / reordenar por fijado)
+  const pins = DB.finPins || [], hidden = DB.finHidden || [];
+  const items = dashItems();
+  const ordered = items.slice().sort((a, b) => (pins.includes(b.key) ? 1 : 0) - (pins.includes(a.key) ? 1 : 0));
+  h += '<div class="sect" style="display:flex;justify-content:space-between;align-items:center">Accesos<button class="lnk" id="dashEditBtn">' + (dashEdit ? "Listo" : "Editar") + '</button></div>';
+  h += '<div class="dash">';
+  ordered.forEach((it) => {
+    const isHidden = hidden.includes(it.key), isPin = pins.includes(it.key);
+    if (isHidden && !dashEdit) return;
+    h += '<div class="dash-card' + (isHidden ? " dimmed" : "") + '" data-dash="' + it.key + '">' +
+      (isPin ? '<span class="dc-pin">●</span>' : '') +
+      '<span class="dc-ic">' + icon(it.icon, 22) + '</span><span class="dc-name">' + it.name + '</span><span class="dc-desc">' + it.desc + '</span><span class="dc-ind">' + it.ind() + '</span>' +
+      (dashEdit ? '<span class="dc-edit"><button data-pin="' + it.key + '">' + (isPin ? "Fijado" : "Fijar") + '</button><button data-hide="' + it.key + '">' + (isHidden ? "Mostrar" : "Ocultar") + '</button></span>' : '') +
+      '</div>';
   });
   h += '</div>';
   w.innerHTML = h;
-  qsa<HTMLElement>("[data-dash]", w).forEach((b) => (b.onclick = () => { histCard = null; renderDinero(b.dataset.dash!); }));
+  $("dashEditBtn").onclick = () => { dashEdit = !dashEdit; renderDashboard(w); };
+  qsa<HTMLElement>("[data-pin]", w).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const k = b.dataset.pin!; DB.finPins = pins.includes(k) ? pins.filter((x) => x !== k) : [...pins, k]; save(); renderDashboard(w); }));
+  qsa<HTMLElement>("[data-hide]", w).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const k = b.dataset.hide!; DB.finHidden = hidden.includes(k) ? hidden.filter((x) => x !== k) : [...hidden, k]; save(); renderDashboard(w); }));
+  qsa<HTMLElement>("[data-dash]", w).forEach((b) => (b.onclick = () => { if (dashEdit) return; histCard = null; renderDinero(b.dataset.dash!); }));
 }
-
 function backBar(title: string): string {
   return '<button class="back" id="dinBack">← Finanzas</button><div class="h-screen" style="margin:6px 0 14px">' + title + '</div>';
 }
@@ -261,7 +288,7 @@ function creditCardHtml(c: any): string {
     '<div><div class="k">Próximo venc.</div><div class="vv">' + (days != null && days >= 0 ? "en " + days + "d" : "—") + '</div></div>' +
     '</div>' +
     // acciones rápidas
-    '<div class="ccact ccmain"><button class="cc-pay" data-pay="' + c.id + '">Registrar pago</button><button data-buy="' + c.id + '">Registrar compra</button><button data-edit="' + c.id + '">Editar</button><button data-hist="' + c.id + '">Ver historial</button></div>' +
+    '<div class="ccact ccmain"><button class="cc-pay" data-pay="' + c.id + '">Modificar pago del mes</button><button data-buy="' + c.id + '">Registrar compra</button><button data-edit="' + c.id + '">Editar</button><button data-hist="' + c.id + '">Ver historial</button></div>' +
     '<div class="ccact ccsec"><button data-susp="' + c.id + '">' + (c.active === false ? "Activar" : "Suspender") + '</button><button data-delc="' + c.id + '">Eliminar</button></div>' +
     '</div>';
 }

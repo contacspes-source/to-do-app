@@ -3,12 +3,13 @@
  * Reemplaza el <script type="module"> suelto del archivo único, ahora modular.
  */
 import { supabase } from "../database/client";
-import { DB, STORAGE_KEY, onSave } from "../database/store";
+import { DB, STORAGE_KEY, onSave, setDB } from "../database/store";
 import { $ } from "../utils/dom";
 
 let currentUser: any = null;
 let pushTimer: any = null;
 let loginRunning = false;
+let syncedOnce = false;
 
 function setAcc(html: string) { const s = $("acc-status"); if (s) s.innerHTML = html; }
 function msg(t: string, ok?: boolean) { const m = $("acc-msg"); if (!m) return; m.style.display = t ? "block" : "none"; m.textContent = t || ""; m.style.color = ok ? "var(--ink-1)" : "var(--warn)"; }
@@ -39,13 +40,14 @@ async function onLogin() {
   if (cloud) {
     const cloudStr = JSON.stringify(cloud);
     if (cloudStr !== localRaw) {
-      localStorage.setItem(STORAGE_KEY, cloudStr);
-      setAcc("Sesión: <b>" + em + "</b> · datos cargados. Recargando…");
-      setTimeout(() => location.reload(), 500); return;
+      setDB(cloud);                       // aplica datos y re-renderiza, SIN recargar
+      setAcc("Sesión: <b>" + em + "</b> · datos sincronizados ✓");
+    } else {
+      setAcc("Sesión: <b>" + em + "</b> · sincronizado ✓");
     }
-    setAcc("Sesión: <b>" + em + "</b> · sincronizado ✓");
+    syncedOnce = true;
   } else { await cloudPush(); setAcc("Sesión: <b>" + em + "</b> · sincronizado ✓"); }
-  loginRunning = false;
+  syncedOnce = true; loginRunning = false;
 }
 function onLogout() { currentUser = null; showAuthed(false); setAcc("Sin sesión · los datos se guardan solo en este dispositivo."); }
 
@@ -55,9 +57,13 @@ export function initSync() {
   onSave(schedulePush);
   if (!supabase) return;
 
-  supabase.auth.onAuthStateChange((_e, session) => {
+  supabase.auth.onAuthStateChange((event, session) => {
     currentUser = session && session.user ? session.user : null;
-    if (currentUser) onLogin(); else onLogout();
+    // Solo reaccionar a inicio/cierre de sesión reales. Ignorar TOKEN_REFRESHED,
+    // USER_UPDATED y SIGNED_IN repetidos (que ocurren al reactivar la pestaña):
+    // antes reejecutaban onLogin() + reload y devolvían al usuario a "Hoy".
+    if (event === "SIGNED_OUT") { syncedOnce = false; onLogout(); return; }
+    if (currentUser && !syncedOnce) onLogin();
   });
 
   const inEmail = $<HTMLInputElement>("acc-email"), inPass = $<HTMLInputElement>("acc-pass");
@@ -83,8 +89,8 @@ export function initSync() {
   supabase.auth.getSession().then((res) => {
     const s = res.data ? res.data.session : null;
     const u = s && s.user ? s.user : null;
-    if (u && !currentUser) { currentUser = u; onLogin(); }
-    else if (!u && !currentUser) onLogout();
+    if (u && !syncedOnce) { currentUser = u; onLogin(); }
+    else if (!u) onLogout();
   });
 }
 

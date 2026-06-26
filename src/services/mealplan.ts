@@ -11,7 +11,19 @@ import { DB, save } from "../database/store";
 import type { FoodProfile } from "../types";
 import { RECIPES, recipesByMeal, recipeById, recipeMacros, GROCERY_ORDER, type MealSlot, type GroceryCat, type Recipe } from "../database/recipes";
 
-const SLOTS: MealSlot[] = ["desayuno", "colacion", "comida", "cena"];
+export interface SlotDef { slot: string; pool: MealSlot; label: string; }
+/** 5 tiempos base; 6º (colación nocturna) si el objetivo es ganar músculo. */
+export function planSlots(): SlotDef[] {
+  const base: SlotDef[] = [
+    { slot: "desayuno", pool: "desayuno", label: "Desayuno" },
+    { slot: "colacion1", pool: "colacion", label: "Colación matutina" },
+    { slot: "comida", pool: "comida", label: "Comida" },
+    { slot: "colacion2", pool: "colacion", label: "Colación vespertina" },
+    { slot: "cena", pool: "cena", label: "Cena" },
+  ];
+  if (DB.foodProfile?.goal === "muscle") base.push({ slot: "extra", pool: "colacion", label: "Colación nocturna" });
+  return base;
+}
 export const WEEK_DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 /** Identificador de la semana actual (año + número de semana ISO aproximado). */
@@ -23,7 +35,9 @@ export function weekKey(d = new Date()): string {
 
 /** Devuelve el plan vigente; lo regenera si no existe o cambió la semana. */
 export function getPlan(): Record<string, string> {
-  if (!DB.mealPlan || DB.mealPlanWeek !== weekKey() || Object.keys(DB.mealPlan).length === 0) {
+  const slots = planSlots();
+  const structOk = DB.mealPlan && slots.every((d) => DB.mealPlan!["0-" + d.slot]);
+  if (!DB.mealPlan || DB.mealPlanWeek !== weekKey() || Object.keys(DB.mealPlan).length === 0 || !structOk) {
     generatePlan();
   }
   return DB.mealPlan!;
@@ -35,43 +49,62 @@ function biasedPool(pool: Recipe[], type: string): Recipe[] {
   return pool;
 }
 
-/** Genera un plan para los 7 días según el tipo (variado/económico/proteína). */
-export function generatePlan(type?: string, fixedOats = true): void {
+/** Ajusta el orden del pool según el objetivo físico (déficit/músculo). */
+function goalBias(pool: Recipe[]): Recipe[] {
+  const goal = DB.foodProfile?.goal;
+  if (goal === "deficit") return [...pool].sort((a, b) => recipeMacros(a.id).kcal - recipeMacros(b.id).kcal);
+  if (goal === "muscle") return [...pool].sort((a, b) => recipeMacros(b.id).kcal - recipeMacros(a.id).kcal);
+  return pool;
+}
+
+/**
+ * Regeneración inteligente: combina tipo + objetivo, evita repetir las recetas
+ * del plan anterior y reparte con variedad. Cada regeneración se siente distinta
+ * pero coherente (no es 100% aleatoria).
+ */
+export function generatePlan(type?: string): void {
   type = type || DB.mealPlanType || "variado";
   DB.mealPlanType = type;
+  const prev = new Set(Object.values(DB.mealPlan || {}));
   const plan: Record<string, string> = {};
-  const pools: Record<MealSlot, Recipe[]> = {
-    desayuno: biasedPool(recipesByMeal("desayuno"), type), colacion: biasedPool(recipesByMeal("colacion"), type),
-    comida: biasedPool(recipesByMeal("comida"), type), cena: biasedPool(recipesByMeal("cena"), type),
-  };
+  const slots = planSlots();
   const oats = RECIPES.filter((r) => r.tags?.includes("overnight"));
-  for (let day = 0; day < 7; day++) {
-    SLOTS.forEach((slot, si) => {
-      const pool = pools[slot];
-      // rotación con desfase por slot para máxima variedad
-      let pick = pool[(day + si * 2) % pool.length];
-      // Lun/Mié/Vie: overnight oats como desayuno frecuente fijo
-      if (fixedOats && slot === "desayuno" && [0, 2, 4].includes(day) && oats.length) {
-        pick = oats[day % oats.length];
-      }
-      plan[day + "-" + slot] = pick.id;
-    });
-  }
+  const usedThisWeek: Record<string, Set<string>> = {};
+
+  slots.forEach((def, si) => {
+    // pool ordenado por tipo y objetivo
+    let pool = goalBias(biasedPool(recipesByMeal(def.pool), type!));
+    // preferimos recetas no usadas la semana pasada (variedad real)
+    const fresh = pool.filter((r) => !prev.has(r.id));
+    const ranked = fresh.length >= 5 ? fresh.concat(pool.filter((r) => prev.has(r.id))) : pool;
+    usedThisWeek[def.slot] = new Set();
+    const offset = Math.floor(Math.random() * ranked.length); // varía en cada regeneración
+    for (let day = 0; day < 7; day++) {
+      let idx = (offset + day) % ranked.length;
+      let pick = ranked[idx];
+      // evitar repetir el mismo platillo en días seguidos del mismo slot
+      let guard = 0;
+      while (usedThisWeek[def.slot].has(pick.id) && guard < ranked.length) { idx = (idx + 1) % ranked.length; pick = ranked[idx]; guard++; }
+      if (def.pool === "desayuno" && [0, 2, 4].includes(day) && oats.length) pick = oats[day % oats.length];
+      usedThisWeek[def.slot].add(pick.id);
+      plan[day + "-" + def.slot] = pick.id;
+    }
+  });
   DB.mealPlan = plan;
   DB.mealPlanWeek = weekKey();
   save();
 }
 
 /** Cambia una receta puntual del plan (selección manual del usuario). */
-export function setPlanSlot(day: number, slot: MealSlot, recipeId: string) {
+export function setPlanSlot(day: number, slot: string, recipeId: string) {
   DB.mealPlan = DB.mealPlan || {};
   DB.mealPlan[day + "-" + slot] = recipeId;
   save();
 }
 
-export function recipesForDay(day: number): { slot: MealSlot; recipe: Recipe | undefined }[] {
+export function recipesForDay(day: number): { slot: string; label: string; pool: MealSlot; recipe: Recipe | undefined }[] {
   const plan = getPlan();
-  return SLOTS.map((slot) => ({ slot, recipe: recipeById(plan[day + "-" + slot]) }));
+  return planSlots().map((d) => ({ slot: d.slot, label: d.label, pool: d.pool, recipe: recipeById(plan[day + "-" + d.slot]) }));
 }
 
 /** Lista de súper agrupada por categoría a partir del plan vigente. */
