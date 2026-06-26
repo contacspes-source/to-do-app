@@ -39,7 +39,7 @@
 <!-- PLAN -->
 <section class="screen" id="plan">
 <div class="h-screen">Tu plan</div>
-<div class="seg" id="planseg"><button class="on" data-v="avance">Avance</button><button data-v="materias">Materias</button><button data-v="horario">Horario</button><button data-v="ruta">Ruta</button></div>
+<div class="seg" id="planseg"><button class="on" data-v="avance">Avance</button><button data-v="materias">Materias</button><button data-v="horario">Horario</button><button data-v="ruta">Ruta</button><button data-v="enfoque">Enfoque</button><button data-v="revision">Revisión</button></div>
 <div id="planBody"></div>
 </section>
 
@@ -65,7 +65,7 @@
 <!-- COMIDA -->
 <section class="screen" id="comida">
 <div class="h-screen">Comida</div>
-<div class="seg" id="comidaseg"><button class="on" data-v="plan">Plan</button><button data-v="recetas">Recetas</button><button data-v="super">Súper</button><button data-v="perfil">Perfil</button><button data-v="progreso">Progreso</button></div>
+<div class="seg" id="comidaseg"><button class="on" data-v="plan">Plan</button><button data-v="recetas">Recetas</button><button data-v="super">Súper</button><button data-v="refri">Refri</button><button data-v="perfil">Perfil</button></div>
 <div id="comidaBody"></div>
 </section>
 
@@ -130,6 +130,16 @@
 <button class="btn btn-ghost" data-money="proy">Presupuesto y proyección</button>
 </div></div>
 
+<div class="acc-cat"><button class="acc-h">Recordatorios<span class="acc-x">▾</span></button>
+<div class="acc-body">
+<div class="set-row" style="margin-top:0"><div><div class="sl">Activar recordatorios</div><div class="ss">Avisos de comidas y de súper</div></div><div class="toggle" id="rem-enabled"></div></div>
+<div class="field" style="margin-top:14px"><span class="label">Horarios de comida</span><div class="row2"><input class="input mono" id="rem-desayuno" type="time"><input class="input mono" id="rem-comida" type="time"></div><div style="height:8px"></div><input class="input mono" id="rem-cena" type="time"></div>
+<div class="field"><span class="label">Día de súper</span><select class="input select" id="rem-gday"><option value="0">Domingo</option><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option></select></div>
+<button class="btn btn-ghost" id="rem-save">Guardar recordatorios</button>
+<div style="height:10px"></div><button class="btn btn-ghost" id="rem-notif">Activar notificaciones del navegador</button>
+<div class="note" id="rem-msg" style="margin-top:10px">Las notificaciones funcionan mientras la app está abierta. Avisos en segundo plano: a futuro.</div>
+</div></div>
+
 <div class="acc-cat"><button class="acc-h">Apariencia<span class="acc-x">▾</span></button>
 <div class="acc-body">
 <div class="set-row" style="margin-top:0"><div><div class="sl">Tema</div><div class="ss" id="themeState">Oscuro</div></div>
@@ -182,10 +192,10 @@
 <div class="field"><span class="label">Nombre</span><input class="input" id="c-name" placeholder="Ej. Azul"></div>
 <div class="field"><span class="label">Banco</span><input class="input" id="c-bank" placeholder="Ej. BBVA"></div>
 <div class="field row2"><div><span class="label">Alias</span><input class="input" id="c-alias" placeholder="Ej. Mi tarjeta"></div><div><span class="label">Últimos 4 dígitos</span><input class="input mono" id="c-last4" maxlength="4" inputmode="numeric" placeholder="1234"></div></div>
-<div class="field row2"><div><span class="label">Límite</span><input class="input mono" id="c-limit" type="number" inputmode="decimal" placeholder="0"></div><div><span class="label">Usado / deuda</span><input class="input mono" id="c-bal" type="number" inputmode="decimal" placeholder="0"></div></div>
+<div class="field row2"><div><span class="label">Límite</span><input class="input mono" id="c-limit" type="number" inputmode="decimal" step="0.01" placeholder="0"></div><div><span class="label">Usado / deuda</span><input class="input mono" id="c-bal" type="number" inputmode="decimal" step="0.01" placeholder="0"></div></div>
 <div class="field row2"><div><span class="label">Día de corte</span><input class="input mono" id="c-cut" type="number" inputmode="numeric" placeholder="15"></div><div><span class="label">Día de pago</span><input class="input mono" id="c-pay" type="number" inputmode="numeric" placeholder="5"></div></div>
-<div class="field row2"><div><span class="label">Interés anual %</span><input class="input mono" id="c-apr" type="number" inputmode="decimal" placeholder="0"></div><div><span class="label">Estado</span><div class="pills" id="c-status"><button class="pill sel" data-v="1">Activa</button><button class="pill" data-v="0">Inactiva</button></div></div></div>
-<div class="field row2"><div><span class="label">Pago mínimo</span><input class="input mono" id="c-min" type="number" inputmode="decimal" placeholder="0"></div><div><span class="label">Pago personalizado</span><input class="input mono" id="c-planned" type="number" inputmode="decimal" placeholder="0"></div></div>
+<div class="field row2"><div><span class="label">Interés anual %</span><input class="input mono" id="c-apr" type="number" inputmode="decimal" step="0.01" placeholder="0"></div><div><span class="label">Estado</span><div class="pills" id="c-status"><button class="pill sel" data-v="1">Activa</button><button class="pill" data-v="0">Inactiva</button></div></div></div>
+<div class="field row2"><div><span class="label">Pago mínimo</span><input class="input mono" id="c-min" type="number" inputmode="decimal" step="0.01" placeholder="0"></div><div><span class="label">Pago personalizado</span><input class="input mono" id="c-planned" type="number" inputmode="decimal" step="0.01" placeholder="0"></div></div>
 <div class="field"><span class="label">Pago a registrar este periodo</span><div class="pills" id="c-paytype"><button class="pill sel" data-v="min">Pago mínimo</button><button class="pill" data-v="custom">Personalizado</button></div><div class="note" id="c-payhint" style="margin-top:8px"></div></div>
 <div class="field"><span class="label">Vista previa</span><div class="cardface" id="c-preview"><div class="cf-top"><div><div class="cf-bank" id="cp-bank">Banco</div><div class="cf-alias" id="cp-alias">Alias</div></div><div class="cf-logo" id="cp-logo">💳</div></div><div><div class="cf-num" id="cp-num">•••• ••••</div></div></div></div>
 <div class="field"><span class="label">Fondo</span><div class="pills" id="c-bgmode"><button class="pill sel" data-v="color">Color</button><button class="pill" data-v="gradient">Gradiente</button><button class="pill" data-v="template">Plantilla</button><button class="pill" data-v="image">Imagen</button></div></div>
@@ -198,30 +208,26 @@
 <!-- MODAL Pago del mes (mínimo + programado unificados) -->
 <div class="modal" id="payModal"><div class="sheet"><h3 id="payTitle">Pago del mes</h3>
 <div class="note" id="pay-info" style="margin-top:0"></div>
-<div class="field row2" style="margin-top:12px"><div><span class="label">Pago mínimo</span><input class="input mono" id="pay-min" type="number" inputmode="decimal" placeholder="0"></div><div><span class="label">Pago programado</span><input class="input mono" id="pay-prog" type="number" inputmode="decimal" placeholder="0"></div></div>
+<div class="field row2" style="margin-top:12px"><div><span class="label">Pago mínimo</span><input class="input mono" id="pay-min" type="number" inputmode="decimal" step="0.01" placeholder="0"></div><div><span class="label">Pago programado</span><input class="input mono" id="pay-prog" type="number" inputmode="decimal" step="0.01" placeholder="0"></div></div>
 <div class="field"><span class="label">Aplicar este mes</span><div class="pills" id="pay-which"><button class="pill sel" data-v="min">Mínimo</button><button class="pill" data-v="custom">Programado</button></div></div>
 <div class="note" id="pay-hint" style="margin-top:4px"></div>
 <button class="btn btn-primary" id="pay-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="pay-cancel">Cancelar</button>
 </div></div>
-<!-- MODAL simulador de pago -->
-<div class="modal" id="simModal"><div class="sheet"><h3 id="simTitle">Simulador de pago</h3>
-<div class="note" id="sim-info" style="margin-top:0"></div>
-<div class="field" style="margin-top:12px"><span class="label">Pago mensual</span><input class="input mono" id="sim-amt" type="number" inputmode="decimal" placeholder="0"></div>
-<div id="sim-out"></div>
-<div style="height:14px"></div><button class="btn btn-primary" id="sim-save">Guardar como pago planeado</button><div style="height:10px"></div><button class="btn btn-ghost" id="sim-close">Cerrar</button>
-</div></div>
 <!-- MODAL cuenta -->
 <div class="modal" id="acctModal"><div class="sheet"><h3 id="acctTitle">Nueva cuenta</h3>
 <div class="field"><span class="label">Nombre</span><input class="input" id="a-name" placeholder="Ej. BBVA Débito"></div>
-<div class="field"><span class="label">Banco (opcional)</span><input class="input" id="a-bank" placeholder="Ej. BBVA"></div>
+<div class="field row2"><div><span class="label">Banco</span><input class="input" id="a-bank" placeholder="Ej. BBVA"></div><div><span class="label">Alias</span><input class="input" id="a-alias" placeholder="Ej. Nómina"></div></div>
 <div class="field"><span class="label">Tipo</span><div class="pills" id="a-type"><button class="pill sel" data-v="debito">Débito</button><button class="pill" data-v="ahorro">Ahorros</button><button class="pill" data-v="efectivo">Efectivo</button></div></div>
-<div class="field"><span class="label">Saldo actual</span><input class="input mono" id="a-bal" type="number" inputmode="decimal" placeholder="0"></div>
+<div class="field"><span class="label">Número de cuenta</span><input class="input mono" id="a-accountNo" inputmode="numeric" placeholder="Opcional"></div>
+<div class="field"><span class="label">CLABE</span><input class="input mono" id="a-clabe" inputmode="numeric" maxlength="18" placeholder="18 dígitos (opcional)"></div>
+<div class="field"><span class="label">Número de tarjeta</span><input class="input mono" id="a-cardNo" inputmode="numeric" placeholder="Opcional"></div>
+<div class="field"><span class="label">Saldo actual</span><input class="input mono" id="a-bal" type="number" inputmode="decimal" step="0.01" placeholder="0"></div>
 <button class="btn btn-primary" id="a-save">Guardar cuenta</button><div style="height:10px"></div><button class="btn btn-ghost" id="a-cancel">Cancelar</button>
 </div></div>
 <!-- MODAL movimiento -->
 <div class="modal" id="txModal"><div class="sheet"><h3>Nuevo movimiento</h3>
 <div class="field"><span class="label">Tipo</span><div class="pills" id="t-type"><button class="pill sel" data-v="gasto">Gasto</button><button class="pill" data-v="ingreso">Ingreso</button></div></div>
-<div class="field"><span class="label">Monto</span><input class="input mono" id="t-amt" type="number" inputmode="decimal" placeholder="0"></div>
+<div class="field"><span class="label">Monto</span><input class="input mono" id="t-amt" type="number" inputmode="decimal" step="0.01" placeholder="0"></div>
 <div class="field"><span class="label">Categoría</span><div class="pills" id="t-cat"></div></div>
 <div class="field"><span class="label">Método de pago</span><div class="pills" id="t-method"><button class="pill sel" data-v="efectivo">Efectivo</button><button class="pill" data-v="debito">Débito</button><button class="pill" data-v="credito">Crédito</button></div></div>
 <div class="field" id="t-src-wrap" style="display:none"><span class="label" id="t-src-label">Cuenta</span><div class="pills" id="t-src"></div></div>
@@ -231,20 +237,20 @@
 <!-- MODAL suscripción -->
 <div class="modal" id="subModal"><div class="sheet"><h3 id="subTitle">Nueva suscripción</h3>
 <div class="field"><span class="label">Nombre</span><input class="input" id="s-name" placeholder="Ej. Netflix"></div>
-<div class="field row2"><div><span class="label">Monto mensual</span><input class="input mono" id="s-amt" type="number" inputmode="decimal" placeholder="0"></div><div><span class="label">Día de cobro</span><input class="input mono" id="s-day" type="number" inputmode="numeric" placeholder="1"></div></div>
+<div class="field row2"><div><span class="label">Monto mensual</span><input class="input mono" id="s-amt" type="number" inputmode="decimal" step="0.01" placeholder="0"></div><div><span class="label">Día de cobro</span><input class="input mono" id="s-day" type="number" inputmode="numeric" placeholder="1"></div></div>
 <button class="btn btn-primary" id="s-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="s-cancel">Cancelar</button>
 </div></div>
 <!-- MODAL meta -->
 <div class="modal" id="goalModal"><div class="sheet"><h3 id="goalTitle">Nueva meta</h3>
 <div class="field"><span class="label">Nombre</span><input class="input" id="g-name" placeholder="Ej. Laptop nueva"></div>
-<div class="field row2"><div><span class="label">Meta ($)</span><input class="input mono" id="g-target" type="number" inputmode="decimal" placeholder="0"></div><div><span class="label">Ahorrado ($)</span><input class="input mono" id="g-saved" type="number" inputmode="decimal" placeholder="0"></div></div>
+<div class="field row2"><div><span class="label">Meta ($)</span><input class="input mono" id="g-target" type="number" inputmode="decimal" step="0.01" placeholder="0"></div><div><span class="label">Ahorrado ($)</span><input class="input mono" id="g-saved" type="number" inputmode="decimal" step="0.01" placeholder="0"></div></div>
 <button class="btn btn-primary" id="g-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="g-cancel">Cancelar</button>
 </div></div>
 
 <!-- MODAL compra de super -> Finanzas -->
 <div class="modal" id="buyModal"><div class="sheet"><h3>Registrar compra del súper</h3>
 <div class="note" style="margin-top:0">Se creará un gasto en Finanzas con categoría <b>Supermercado</b> y la fecha de hoy. Así no capturas la compra dos veces.</div>
-<div class="field" style="margin-top:12px"><span class="label">Total pagado</span><input class="input mono" id="buy-amt" type="number" inputmode="decimal" placeholder="0"></div>
+<div class="field" style="margin-top:12px"><span class="label">Total pagado</span><input class="input mono" id="buy-amt" type="number" inputmode="decimal" step="0.01" placeholder="0"></div>
 <div class="field"><span class="label">Método de pago</span><div class="pills" id="buy-method"><button class="pill sel" data-v="efectivo">Efectivo</button><button class="pill" data-v="debito">Débito</button><button class="pill" data-v="credito">Crédito</button></div></div>
 <div class="field" id="buy-src-wrap" style="display:none"><span class="label" id="buy-src-label">Cuenta</span><div class="pills" id="buy-src"></div></div>
 <div class="field"><span class="label">Notas (opcional)</span><input class="input" id="buy-note" placeholder="Ej. súper semanal"></div>

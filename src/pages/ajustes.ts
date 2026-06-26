@@ -4,6 +4,7 @@
 import { DB, save, STORAGE_KEY } from "../database/store";
 import { $, qsa, pillGroup, resetPills } from "../utils/dom";
 import { updatePassword, hasAuth } from "../services/sync";
+import { requestNotifPermission } from "../services/reminders";
 import { renderHoy, setHoyMode } from "./hoy";
 
 const ACCENTS = ["#2563eb", "#7c3aed", "#db2777", "#059669", "#ea580c", "#0891b2", "#161616"];
@@ -23,6 +24,12 @@ export function renderAjustes() {
   $("th-light").classList.toggle("on", DB.theme === "light");
   $<HTMLInputElement>("set-name").value = DB.name || "";
   resetPills("set-cur", DB.cur || "MXN"); buildAccent();
+  const r = DB.reminders || {};
+  $("rem-enabled").classList.toggle("on", !!r.enabled);
+  ($("rem-desayuno") as HTMLInputElement).value = r.desayuno || "";
+  ($("rem-comida") as HTMLInputElement).value = r.comida || "";
+  ($("rem-cena") as HTMLInputElement).value = r.cena || "";
+  ($("rem-gday") as HTMLSelectElement).value = String(r.groceryDay ?? 0);
 }
 
 export function initAjustes() {
@@ -36,6 +43,10 @@ export function initAjustes() {
     m.textContent = "Cambiando…";
     updatePassword(p).then((r) => { m.style.color = r.error ? "var(--warn)" : "var(--ink-1)"; m.textContent = r.error ? "Error: " + r.error.message : "Contraseña actualizada."; if (!r.error) $<HTMLInputElement>("set-newpass").value = ""; });
   };
+  // recordatorios
+  $("rem-enabled").onclick = () => { DB.reminders = DB.reminders || {}; DB.reminders.enabled = !DB.reminders.enabled; save(); renderAjustes(); };
+  $("rem-save").onclick = () => { DB.reminders = DB.reminders || {}; DB.reminders.desayuno = ($("rem-desayuno") as HTMLInputElement).value; DB.reminders.comida = ($("rem-comida") as HTMLInputElement).value; DB.reminders.cena = ($("rem-cena") as HTMLInputElement).value; DB.reminders.groceryDay = +($("rem-gday") as HTMLSelectElement).value; save(); const m = $("rem-msg"); m.textContent = "Recordatorios guardados."; m.style.color = "var(--ink-1)"; };
+  $("rem-notif").onclick = () => { requestNotifPermission().then((p) => { const m = $("rem-msg"); m.style.color = "var(--ink-1)"; m.textContent = p === "granted" ? "Notificaciones activadas (mientras la app está abierta)." : "Permiso: " + p + "."; }); };
   $("resetHab").onclick = () => { if (confirm("¿Reiniciar los hábitos de la semana?")) { DB.habitLog = {}; save(); } };
   $("resetAll").onclick = () => { if (confirm("¿Restablecer todo a los datos de ejemplo? Se borra tu progreso.")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } };
   initDataIO();

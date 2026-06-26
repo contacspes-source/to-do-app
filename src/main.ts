@@ -7,7 +7,8 @@ import "./styles/nav.css";
 import "./styles/components.css";
 
 import { DB } from "./database/store";
-import { $ } from "./utils/dom";
+import { $, qsa } from "./utils/dom";
+import { icon } from "./components/icons";
 import { initRouter, go } from "./router";
 import { initModals } from "./components/modals";
 import { initHoy } from "./pages/hoy";
@@ -19,6 +20,7 @@ import { initDinero } from "./pages/dinero";
 import { initComida } from "./pages/comida";
 import { initAjustes } from "./pages/ajustes";
 import { initSync } from "./services/sync";
+import { startReminderWatcher } from "./services/reminders";
 
 // tema inicial
 document.body.setAttribute("data-theme", DB.theme || "light");
@@ -40,8 +42,20 @@ initAjustes();
 $("fab").onclick = openAdd;
 $("newSide").onclick = openAdd;
 
+
+// iconografía monocromática (sin emojis)
+function initIcons() {
+  const map: Record<string, string> = { hoy: "hoy", plan: "plan", habitos: "constancia", dinero: "dinero", comida: "comida", ajustes: "ajustes" };
+  qsa<HTMLElement>("[data-go]").forEach((b) => { const ic = map[b.dataset.go!]; if (!ic) return; const sp = b.querySelector(".si,.ni") as HTMLElement | null; if (sp) sp.innerHTML = icon(ic, sp.classList.contains("ni") ? 20 : 18); });
+  qsa<HTMLElement>('[data-money="tarjetas"]').forEach((b) => { const sp = b.querySelector(".si") as HTMLElement | null; if (sp) sp.innerHTML = icon("tarjetas"); });
+  const gear = $("gear"); if (gear) gear.innerHTML = icon("ajustes");
+  const fab = $("fab"); if (fab) fab.innerHTML = icon("plus", 24);
+}
+initIcons();
+
 // sincronización en la nube (Supabase)
 initSync();
+startReminderWatcher();
 
 // pantalla inicial
 go("hoy");

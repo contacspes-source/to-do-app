@@ -6,7 +6,9 @@ import { CURRENCIES } from "../config/app";
 
 export function money(n: number): string {
   const c = CURRENCIES[(DB && DB.cur) || "MXN"] || CURRENCIES.MXN;
-  return c.s + Math.round(n).toLocaleString(c.l);
+  const r = Math.round((n || 0) * 100) / 100;
+  const dec = Number.isInteger(r) ? 0 : 2;
+  return c.s + r.toLocaleString(c.l, { minimumFractionDigits: dec, maximumFractionDigits: 2 });
 }
 export function esc(s: any): string {
   return String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" } as Record<string, string>)[ch]);

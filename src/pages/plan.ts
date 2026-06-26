@@ -8,9 +8,27 @@ import { SEM_START } from "../config/app";
 import { MATS, AREAS, SCEN } from "../database/academic-data";
 import { addSect } from "./hoy";
 import { useSegment } from "../hooks/useSegment";
+import { weekKey } from "../services/mealplan";
 
 let curSeg = "avance", curScen = "normal", curDay = 0;
 let editId: { k: string; id: string } | null = null;
+
+/* ---- Enfoque (Pomodoro anti-procrastinación / anti-hiperfoco) ---- */
+const WORK = 25 * 60, BREAK = 5 * 60, LONG = 15 * 60;
+let pomoMode: "work" | "break" | "long" = "work", pomoLeft = WORK, pomoRunning = false, pomoCycles = 0, pomoTimer: any = null;
+function fmtT(s: number) { const m = Math.floor(s / 60), ss = s % 60; return (m < 10 ? "0" : "") + m + ":" + (ss < 10 ? "0" : "") + ss; }
+function pomoLabel() { return pomoMode === "work" ? "Enfoque" : pomoMode === "break" ? "Descanso" : "Descanso largo"; }
+function notify(msg: string) { try { if ("Notification" in window && Notification.permission === "granted") new Notification("Mi semestre · Enfoque", { body: msg }); } catch {} }
+function pomoSwitch() {
+  if (pomoMode === "work") { pomoCycles++; if (pomoCycles % 4 === 0) { pomoMode = "long"; pomoLeft = LONG; notify("¡Buen trabajo! Toca un descanso largo (anti-hiperfoco)."); } else { pomoMode = "break"; pomoLeft = BREAK; notify("Pausa de 5 min. Levántate y respira."); } }
+  else { pomoMode = "work"; pomoLeft = WORK; notify("De vuelta al enfoque: una sola tarea, 25 min."); }
+}
+function pomoTick() {
+  if (!pomoRunning) return;
+  pomoLeft--;
+  if (pomoLeft <= 0) { pomoSwitch(); if (curSeg === "enfoque") renderPlan("enfoque"); return; }
+  const el = document.getElementById("pomo-time"); if (el) el.textContent = fmtT(pomoLeft);
+}
 
 function semWeek() { const ms = Date.now() - SEM_START.getTime(); return Math.floor(ms / (7 * 864e5)) + 1; }
 function step(t: string, s: string, root: number) { return '<div class="step' + (root ? " root" : "") + '"><div class="pt">' + t + '</div><div class="ps">' + s + '</div></div>'; }
@@ -73,11 +91,49 @@ export function renderPlan(seg = curSeg) {
     h += '<div class="track-h">Ruta Sistemas Inteligentes</div>' + step("Análisis de Algoritmos", "Inscribes 2026-B · base de IA", 1) + arrow() + step("Algoritmos metaheurísticos", "Redes neuronales, deep learning", 0) + arrow() + step("Módulo: Sistemas Inteligentes", "Aprendizaje máquina", 0);
     h += '<div class="sect">Tronco común (también ahora)</div>' + step("Ingeniería de Software", "Abre los Laboratorios Abiertos", 0) + step("Innovación Tecnológica", "Enfoque proyecto / inversión", 0);
     w.innerHTML = h;
+  } else if (seg === "enfoque") {
+    renderEnfoque(w);
+  } else if (seg === "revision") {
+    renderRevision(w);
   }
+}
+
+function renderEnfoque(w: HTMLElement) {
+  let h = '<div class="card-pad" style="text-align:center"><div class="l" id="pomo-mode" style="font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-mono)">' + pomoLabel() + '</div>';
+  h += '<div class="streak-num" id="pomo-time" style="font-size:64px;margin:8px 0">' + fmtT(pomoLeft) + '</div>';
+  h += '<div class="note" style="margin:0">Ciclos completados hoy: ' + pomoCycles + '</div></div>';
+  h += '<div class="row2" style="display:flex;gap:10px"><button class="btn btn-primary" id="pomo-toggle" style="flex:1">' + (pomoRunning ? "Pausar" : "Iniciar") + '</button><button class="btn btn-ghost" id="pomo-reset" style="flex:1">Reiniciar</button></div>';
+  h += '<div class="sect">Cómo usarlo (TDAH)</div>';
+  h += '<div class="card-pad"><div style="font-size:14px;color:var(--ink-2);line-height:1.7">· <b>Una sola tarea</b> por bloque de 25 min. Escríbela antes de iniciar.<br>· Cuando suene, <b>descansa de verdad</b> (5 min). Cada 4 ciclos, descanso largo: evita el hiperfoco que agota.<br>· Si te distraes, anota el pensamiento en una hoja y vuelve. No lo persigas.<br>· ¿Te cuesta arrancar? Empieza por <b>2 minutos</b>; casi siempre sigues.</div></div>';
+  h += '<button class="btn btn-ghost" id="pomo-notif">Activar avisos del navegador</button>';
+  w.innerHTML = h;
+  document.getElementById("pomo-toggle")!.onclick = () => { pomoRunning = !pomoRunning; renderPlan("enfoque"); };
+  document.getElementById("pomo-reset")!.onclick = () => { pomoRunning = false; pomoMode = "work"; pomoLeft = WORK; renderPlan("enfoque"); };
+  document.getElementById("pomo-notif")!.onclick = () => { if ("Notification" in window) Notification.requestPermission(); };
+}
+
+const REVIEW_ITEMS = [
+  "Revisar pendientes de la semana y cerrar lo hecho",
+  "Mover lo no terminado a la próxima semana",
+  "Revisar avance de materias y entregas próximas",
+  "Planear los bloques de estudio/proyecto de la semana",
+  "Revisar finanzas: pagos y gastos de la semana",
+  "Preparar el meal prep del domingo",
+  "Definir las 3 prioridades de la semana",
+];
+function renderRevision(w: HTMLElement) {
+  const wk = weekKey(); const done = REVIEW_ITEMS.filter((_, i) => DB.review![wk + "::" + i]).length;
+  const pct = Math.round((done / REVIEW_ITEMS.length) * 100);
+  let h = '<div class="note" style="margin-top:0">Una revisión corta cada domingo mantiene el semestre bajo control. Se reinicia sola cada semana.</div>';
+  h += '<div class="card-pad" style="margin-top:10px"><div class="arow" style="margin:0"><div class="top"><b style="font-weight:500">Revisión de esta semana</b><span class="v">' + done + '/' + REVIEW_ITEMS.length + '</span></div><div class="bar"><i class="acc" style="width:' + pct + '%"></i></div></div></div>';
+  REVIEW_ITEMS.forEach((it, i) => { const on = DB.review![wk + "::" + i]; h += '<div class="task' + (on ? " done" : "") + '"><button class="check" data-rev="' + i + '" aria-label="Hecho"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 5"/></svg></button><div class="body"><span class="ttl">' + esc(it) + '</span></div></div>'; });
+  w.innerHTML = h;
+  qsa<HTMLElement>("[data-rev]", w).forEach((b) => (b.onclick = () => { const k = wk + "::" + b.dataset.rev; DB.review![k] = !DB.review![k]; save(); renderPlan("revision"); }));
 }
 
 export function initPlan() {
   useSegment("planseg", "avance", (v) => renderPlan(v));
+  if (!pomoTimer) pomoTimer = setInterval(pomoTick, 1000);
   $("m-cancel").onclick = () => closeModal("blkModal");
   $("m-save").onclick = () => { if (!editId) return; DB.schedEdit[editId.k] = DB.schedEdit[editId.k] || {}; DB.schedEdit[editId.k][editId.id] = { t: $<HTMLInputElement>("m-time").value.trim(), a: $<HTMLInputElement>("m-act").value.trim() }; save(); closeModal("blkModal"); renderSched(editId.k, curDay); };
 }

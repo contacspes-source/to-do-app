@@ -70,3 +70,10 @@ select.input,select.select{
   background-size:5px 5px,5px 5px;background-repeat:no-repeat;
   padding-right:34px;cursor:pointer}
 select.input option,select.select option{background:var(--bg);color:var(--ink-1)}
+
+/* ---- scrollbars discretas y acordes al tema ---- */
+*{scrollbar-width:thin;scrollbar-color:var(--hair-2) transparent}
+*::-webkit-scrollbar{width:8px;height:8px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--hair-2);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:var(--ink-4)}

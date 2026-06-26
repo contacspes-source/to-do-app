@@ -12,7 +12,8 @@ import {
   monthlyIncome, monthlyGasto, monthlySubs, monthsSpanAll, computeAlerts,
 } from "../finance/calc";
 import { cardBg, cardPay, cardPayType, cardById, paySim } from "../finance/cards";
-import { openCard, openSim, openPay, openAcct, openTx, openSub, openGoal } from "../components/modals";
+import { openCard, openPay, openAcct, openTx, openSub, openGoal } from "../components/modals";
+import { icon } from "../components/icons";
 
 let dinSeg = "home";
 let proyH = 1;
@@ -29,18 +30,18 @@ function dashItems(): DashItem[] {
   const cash = totalDebito(), deuda = totalDebt();
   const safe = cash - (deuda + monthlySubs());
   return [
-    { key: "tarjetas", icon: "💳", name: "Tarjetas de crédito", desc: "Saldo, pago del mes y uso", ind: () => DB.cards.length ? money(deuda) + " · " + DB.cards.length + (DB.cards.length === 1 ? " tarjeta" : " tarjetas") : "Sin tarjetas" },
-    { key: "presupuesto", icon: "📊", name: "Presupuesto", desc: "Cuánto puedes gastar este mes", ind: () => "Disponible " + money(Math.max(0, safe)) },
-    { key: "gastos", icon: "🧾", name: "Gastos", desc: "Tus salidas del mes por categoría", ind: () => money(gas) + " este mes" },
-    { key: "ingresos", icon: "💵", name: "Ingresos", desc: "Tus entradas del mes", ind: () => money(ing) + " este mes" },
-    { key: "proy", icon: "📈", name: "Proyecciones", desc: "Saldo estimado a futuro", ind: () => "30 / 90 / 365 días" },
-    { key: "metas", icon: "🎯", name: "Metas financieras", desc: "Tus objetivos de ahorro", ind: () => DB.goals.length ? DB.goals.length + (DB.goals.length === 1 ? " meta" : " metas") : "Sin metas" },
-    { key: "movs", icon: "🕘", name: "Historial", desc: "Todos tus movimientos", ind: () => mt.length + " este mes" },
-    { key: "reportes", icon: "📑", name: "Reportes", desc: "Flujo del mes y categorías", ind: () => "Disponible " + money(ing - gas) },
-    { key: "debito", icon: "🏦", name: "Cuentas / Débito", desc: "Tu efectivo y cuentas", ind: () => money(cash) },
-    { key: "deuda", icon: "⚠️", name: "Deuda", desc: "Pagos próximos y avalancha", ind: () => deuda > 0 ? money(deuda) : "Sin deuda" },
-    { key: "calendario", icon: "📅", name: "Calendario", desc: "Cortes, pagos y cobros", ind: () => "Este mes" },
-    { key: "subs", icon: "🔁", name: "Suscripciones", desc: "Gasto recurrente mensual", ind: () => money(monthlySubs()) + "/mes" },
+    { key: "tarjetas", icon: "tarjetas", name: "Tarjetas de crédito", desc: "Saldo, pago del mes y uso", ind: () => DB.cards.length ? money(deuda) + " · " + DB.cards.length + (DB.cards.length === 1 ? " tarjeta" : " tarjetas") : "Sin tarjetas" },
+    { key: "presupuesto", icon: "presupuesto", name: "Presupuesto", desc: "Cuánto puedes gastar este mes", ind: () => "Disponible " + money(Math.max(0, safe)) },
+    { key: "gastos", icon: "gastos", name: "Gastos", desc: "Tus salidas del mes por categoría", ind: () => money(gas) + " este mes" },
+    { key: "ingresos", icon: "ingresos", name: "Ingresos", desc: "Tus entradas del mes", ind: () => money(ing) + " este mes" },
+    { key: "proy", icon: "proyecciones", name: "Proyecciones", desc: "Saldo estimado a futuro", ind: () => "30 / 90 / 365 días" },
+    { key: "metas", icon: "metas", name: "Metas financieras", desc: "Tus objetivos de ahorro", ind: () => DB.goals.length ? DB.goals.length + (DB.goals.length === 1 ? " meta" : " metas") : "Sin metas" },
+    { key: "movs", icon: "historial", name: "Historial", desc: "Todos tus movimientos", ind: () => mt.length + " este mes" },
+    { key: "reportes", icon: "reportes", name: "Reportes", desc: "Flujo del mes y categorías", ind: () => "Disponible " + money(ing - gas) },
+    { key: "debito", icon: "cuentas", name: "Cuentas / Débito", desc: "Tu efectivo y cuentas", ind: () => money(cash) },
+    { key: "deuda", icon: "deuda", name: "Deuda", desc: "Pagos próximos y avalancha", ind: () => deuda > 0 ? money(deuda) : "Sin deuda" },
+    { key: "calendario", icon: "calendario", name: "Calendario", desc: "Cortes, pagos y cobros", ind: () => "Este mes" },
+    { key: "subs", icon: "subs", name: "Suscripciones", desc: "Gasto recurrente mensual", ind: () => money(monthlySubs()) + "/mes" },
   ];
 }
 function renderDashboard(w: HTMLElement) {
@@ -49,7 +50,7 @@ function renderDashboard(w: HTMLElement) {
   if (alerts.length) { h += '<div class="sect">Alertas</div>'; alerts.slice(0, 4).forEach((a) => (h += '<div class="alert">' + esc(a) + '</div>')); }
   h += '<div class="sect">Módulos</div><div class="dash">';
   dashItems().forEach((it) => {
-    h += '<button class="dash-card" data-dash="' + it.key + '"><span class="dc-ic">' + it.icon + '</span><span class="dc-name">' + it.name + '</span><span class="dc-desc">' + it.desc + '</span><span class="dc-ind">' + it.ind() + '</span></button>';
+    h += '<button class="dash-card" data-dash="' + it.key + '"><span class="dc-ic">' + icon(it.icon, 22) + '</span><span class="dc-name">' + it.name + '</span><span class="dc-desc">' + it.desc + '</span><span class="dc-ind">' + it.ind() + '</span></button>';
   });
   h += '</div>';
   w.innerHTML = h;
@@ -76,7 +77,7 @@ export function renderDinero(seg = dinSeg) {
     const lim = sum(DB.cards.map((c) => c.limit || 0)); const util = lim ? Math.round(deuda / lim * 100) : 0;
     h += '<div class="card-pad"><div class="arow" style="margin:0"><div class="top"><b style="font-weight:500">Uso total del crédito</b><span class="v">' + util + '%</span></div><div class="bar"><i class="' + (util > 30 ? "warn" : "acc") + '" style="width:' + Math.min(util, 100) + '%"></i></div><div class="note">Deuda ' + money(deuda) + ' de ' + money(lim) + '. Sano por debajo del 30%.</div></div></div>';
     if (!DB.cards.length) h += '<div class="empty"><div class="big">Sin tarjetas</div>Agrega una con el botón de abajo</div>';
-    DB.cards.forEach((c) => { h += creditCardHtml(c); });
+    cardsOrdered().forEach((c) => { h += creditCardHtml(c); });
     h += '<button class="btn btn-primary" id="addCard">+ Agregar tarjeta</button>';
     w.innerHTML = h;
     $("addCard").onclick = () => openCard();
@@ -126,12 +127,25 @@ export function renderDinero(seg = dinSeg) {
     h += '<div class="card-pad" style="text-align:center"><div class="l" style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono)">Total en cuentas</div><div class="big-money" style="margin-top:8px">' + money(debito) + '</div></div>';
     if (!DB.accounts.length) h += '<div class="empty"><div class="big">Sin cuentas</div>Agrega una cuenta o efectivo</div>';
     const TIPO: Record<string, string> = { debito: "Débito", ahorro: "Ahorros", efectivo: "Efectivo" };
-    DB.accounts.forEach((a) => { const am = mt.filter((t) => t.method !== "credito" && t.acctId == a.id); const ai = sum(am.filter((t) => t.type === "ingreso").map((t) => t.amount)); const ag = sum(am.filter((t) => t.type === "gasto").map((t) => t.amount)); h += '<div class="card-cc"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="cn">' + esc(a.name) + '</div><div class="cnum">' + (TIPO[a.type] || "") + (a.bank ? " · " + esc(a.bank) : "") + '</div></div><button class="hx" data-dela="' + a.id + '" style="color:var(--ink-4);background:none;border:0;font-size:18px;cursor:pointer">×</button></div><div class="big-money" style="font-size:24px;margin-top:10px">' + money(a.balance || 0) + '</div><div class="crow"><span>Ingresos ' + money(ai) + '</span><span>Gastos ' + money(ag) + '</span></div><div class="ccact"><button data-edita="' + a.id + '">Editar</button></div></div>'; });
+    DB.accounts.forEach((a) => {
+      const am = mt.filter((t) => t.method !== "credito" && t.acctId == a.id); const ai = sum(am.filter((t) => t.type === "ingreso").map((t) => t.amount)); const ag = sum(am.filter((t) => t.type === "gasto").map((t) => t.amount));
+      const fixed = a.type === "efectivo";
+      h += '<div class="card-cc"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="cn">' + esc(a.alias || a.name) + '</div><div class="cnum">' + (TIPO[a.type] || "") + (a.bank ? " · " + esc(a.bank) : "") + (fixed ? " · fija" : "") + '</div></div>' + (fixed ? '' : '<button class="hx" data-dela="' + a.id + '" style="color:var(--ink-4);background:none;border:0;font-size:18px;cursor:pointer">×</button>') + '</div>';
+      h += '<div class="big-money" style="font-size:24px;margin-top:10px">' + money(a.balance || 0) + '</div><div class="crow"><span>Ingresos ' + money(ai) + '</span><span>Gastos ' + money(ag) + '</span></div>';
+      const det: string[] = [];
+      if (a.accountNo) det.push(acctDetail("Número de cuenta", a.accountNo));
+      if (a.clabe) det.push(acctDetail("CLABE", a.clabe));
+      if (a.cardNo) det.push(acctDetail("Tarjeta", a.cardNo));
+      if (det.length) h += '<div class="acc-details">' + det.join("") + '</div>';
+      h += '<div class="ccact">' + (det.length ? '<button data-share="' + a.id + '">' + icon("share", 15) + ' Compartir</button>' : '') + '<button data-edita="' + a.id + '">Editar</button></div></div>';
+    });
     h += '<button class="btn btn-primary" id="addAcct">+ Agregar cuenta</button>';
     w.innerHTML = h;
     $("addAcct").onclick = () => openAcct();
     qsa<HTMLElement>("[data-edita]", w).forEach((b) => (b.onclick = () => openAcct(b.dataset.edita)));
     qsa<HTMLElement>("[data-dela]", w).forEach((b) => (b.onclick = () => { if (confirm("¿Eliminar esta cuenta?")) { DB.accounts = DB.accounts.filter((x) => x.id != (b.dataset.dela as any)); save(); renderDinero("debito"); } }));
+    qsa<HTMLElement>("[data-copy]", w).forEach((b) => (b.onclick = () => copyText(b.dataset.copy || "", b)));
+    qsa<HTMLElement>("[data-share]", w).forEach((b) => (b.onclick = () => shareAcct(acctById(b.dataset.share))));
   } else if (seg === "movs") {
     const base = histCard ? mt.filter((t) => t.method === "credito" && t.cardId == histCard) : mt;
     if (histCard) { const c = cardById(histCard); h += '<div class="note" style="margin-top:0">Historial de <b>' + esc(c ? c.name : "") + '</b>. <a id="histAll" style="cursor:pointer;color:var(--accent)">Ver todos</a></div>'; }
@@ -205,11 +219,24 @@ export function renderDinero(seg = dinSeg) {
   const back = $("dinBack"); if (back) back.onclick = () => { histCard = null; renderDinero("home"); };
 }
 
+/* ---------- Orden automático de tarjetas ---------- */
+function cardsOrdered() {
+  const last: Record<string, number> = {};
+  DB.tx.forEach((t) => { if (t.cardId != null) { const d = +new Date(t.date); if (!last[t.cardId] || d > last[t.cardId]) last[t.cardId] = d; } });
+  return DB.cards.slice().sort((a, b) => {
+    const la = last[a.id] || 0, lb = last[b.id] || 0;            // 1) actividad reciente
+    if (lb !== la) return lb - la;
+    const ba = (a.balance || 0) > 0 ? 1 : 0, bb = (b.balance || 0) > 0 ? 1 : 0; // 2) con uso
+    if (bb !== ba) return bb - ba;
+    return (b.balance || 0) - (a.balance || 0);                  // 3) saldo; sin uso al final
+  });
+}
+
 /* ---------- Tarjeta de crédito (estilo banca) ---------- */
 function creditCardHtml(c: any): string {
   const u = c.limit ? Math.round((c.balance || 0) / c.limit * 100) : 0; const avail = (c.limit || 0) - (c.balance || 0);
   const pl = cardPay(c); const ptype = cardPayType(c); const sim = paySim(c.balance || 0, c.apr || 0, pl);
-  const bg = cardBg(c); const clogo = c.bank ? esc(c.bank.charAt(0).toUpperCase()) : "💳"; const cl4 = c.last4 ? "•••• " + esc(c.last4) : "•••• ••••";
+  const bg = cardBg(c); const clogo = c.bank ? esc(c.bank.charAt(0).toUpperCase()) : "$"; const cl4 = c.last4 ? "•••• " + esc(c.last4) : "•••• ••••";
   const dueD = c.pay ? nextDateForDay(+c.pay) : null; const dueTxt = dueD ? dueD.toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "—"; const days = dueD ? Math.round((+dueD - +new Date()) / 864e5) : null;
   const minP = +(c.min || 0); const prog = +(c.planned || 0);
   const flags: string[] = []; if (days != null && days >= 0 && days <= 5 && (c.balance || 0) > 0) flags.push(days === 0 ? "Pago hoy" : "Pago en " + days + "d"); if (u >= 70) flags.push("Uso alto " + u + "%"); if (minP > 0 && ptype === "custom" && pl < minP) flags.push("Pago menor al mínimo");
@@ -235,7 +262,7 @@ function creditCardHtml(c: any): string {
     '</div>' +
     // acciones rápidas
     '<div class="ccact ccmain"><button class="cc-pay" data-pay="' + c.id + '">Registrar pago</button><button data-buy="' + c.id + '">Registrar compra</button><button data-edit="' + c.id + '">Editar</button><button data-hist="' + c.id + '">Ver historial</button></div>' +
-    '<div class="ccact ccsec"><button data-sim="' + c.id + '">Simular</button><button data-susp="' + c.id + '">' + (c.active === false ? "Activar" : "Suspender") + '</button><button data-up="' + c.id + '">↑</button><button data-down="' + c.id + '">↓</button><button data-delc="' + c.id + '">Eliminar</button></div>' +
+    '<div class="ccact ccsec"><button data-susp="' + c.id + '">' + (c.active === false ? "Activar" : "Suspender") + '</button><button data-delc="' + c.id + '">Eliminar</button></div>' +
     '</div>';
 }
 function wireCardActions(w: HTMLElement) {
@@ -243,16 +270,22 @@ function wireCardActions(w: HTMLElement) {
   qsa<HTMLElement>("[data-buy]", w).forEach((b) => (b.onclick = () => openTx("gasto", undefined, { method: "credito", cardId: b.dataset.buy })));
   qsa<HTMLElement>("[data-edit]", w).forEach((b) => (b.onclick = () => openCard(b.dataset.edit)));
   qsa<HTMLElement>("[data-hist]", w).forEach((b) => (b.onclick = () => { histCard = b.dataset.hist; renderDinero("movs"); }));
-  qsa<HTMLElement>("[data-sim]", w).forEach((b) => (b.onclick = () => openSim(b.dataset.sim!)));
   qsa<HTMLElement>("[data-susp]", w).forEach((b) => (b.onclick = () => { const c = cardById(b.dataset.susp); if (c) { c.active = c.active === false; save(); renderDinero("tarjetas"); } }));
   qsa<HTMLElement>("[data-delc]", w).forEach((b) => (b.onclick = () => { if (confirm("¿Eliminar esta tarjeta?")) { DB.cards = DB.cards.filter((x) => x.id != (b.dataset.delc as any)); save(); renderDinero("tarjetas"); } }));
-  qsa<HTMLElement>("[data-up]", w).forEach((b) => (b.onclick = () => moveCard(b.dataset.up, -1)));
-  qsa<HTMLElement>("[data-down]", w).forEach((b) => (b.onclick = () => moveCard(b.dataset.down, 1)));
 }
-export function moveCard(id: any, dir: number) {
-  const i = DB.cards.findIndex((c) => c.id == id); if (i < 0) return;
-  const j = i + dir; if (j < 0 || j >= DB.cards.length) return;
-  const tmp = DB.cards[i]; DB.cards[i] = DB.cards[j]; DB.cards[j] = tmp; save(); renderDinero("tarjetas");
+
+/* ---------- helpers de cuentas ---------- */
+function acctDetail(label: string, value: string): string {
+  return '<div class="acc-det"><div class="ad-info"><div class="k">' + label + '</div><div class="vv">' + esc(value) + '</div></div><button class="ad-copy" data-copy="' + esc(value) + '" aria-label="Copiar">' + icon("copy", 15) + '</button></div>';
+}
+function copyText(t: string, btn?: HTMLElement) {
+  try { if (navigator.clipboard) navigator.clipboard.writeText(t); if (btn) { const o = btn.innerHTML; btn.textContent = "✓"; setTimeout(() => (btn.innerHTML = o), 1200); } } catch {}
+}
+function shareAcct(a: any) {
+  if (!a) return;
+  const lines = [a.alias || a.name, a.bank && ("Banco: " + a.bank), a.clabe && ("CLABE: " + a.clabe), a.accountNo && ("Cuenta: " + a.accountNo), a.cardNo && ("Tarjeta: " + a.cardNo)].filter(Boolean).join("\n");
+  const nav = navigator as any;
+  if (nav.share) nav.share({ title: a.alias || a.name, text: lines }).catch(() => {}); else copyText(lines);
 }
 
 /* ---------- helpers de listas ---------- */

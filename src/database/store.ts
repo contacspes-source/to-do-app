@@ -47,12 +47,17 @@ function migrate() {
   if (!DB.foodProfile) DB.foodProfile = { height: 178, weight: 67, activity: "none", goal: "recomp", waterTargetL: 3 };
   if (DB.foodProfile.targetWeight == null) DB.foodProfile.targetWeight = 70;
   DB.mealPlan = DB.mealPlan || {};
+  DB.mealPlanType = DB.mealPlanType || "variado";
   DB.weightLog = DB.weightLog || [];
   DB.measurements = DB.measurements || [];
   DB.bodyPhotos = DB.bodyPhotos || [];
   DB.waterLog = DB.waterLog || {};
   DB.planLog = DB.planLog || {};
   DB.mealsLog = DB.mealsLog || {};
+  DB.pantry = DB.pantry || [];
+  DB.pantrySeq = DB.pantrySeq || 1;
+  DB.reminders = DB.reminders || { enabled: false, desayuno: "07:00", comida: "14:00", cena: "21:00", groceryDay: 0 };
+  DB.review = DB.review || {};
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }

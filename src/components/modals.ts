@@ -7,7 +7,7 @@ import { DB, save } from "../database/store";
 import { $, qsa, pillGroup, resetPills, openModal, closeModal } from "../utils/dom";
 import { esc, money } from "../utils/format";
 import { CATEGORIES } from "../config/app";
-import { CARDCOLORS, CARDGRADS, CARDTPL, cardBg, cardById, cardPay, cardPayType, paySim } from "../finance/cards";
+import { CARDCOLORS, CARDGRADS, CARDTPL, cardById, cardPayType } from "../finance/cards";
 import { applyTx } from "../finance/calc";
 import { renderDinero } from "../pages/dinero";
 
@@ -74,27 +74,16 @@ export function openPay(id: any) {
   updatePayModalHint(); openModal("payModal");
 }
 
-/* ============ Simulador ============ */
-let simCardId: any = null;
-function renderSim() {
-  const c = cardById(simCardId); if (!c) return; const pay = +$<HTMLInputElement>("sim-amt").value || 0; const s = paySim(c.balance || 0, c.apr || 0, pay); const o = $("sim-out");
-  if (!s.ok) { o.innerHTML = '<div class="alert" style="margin-top:12px">Con ese pago la deuda no baja (no cubre los intereses). Sube el monto.</div>'; return; }
-  const end = new Date(); end.setMonth(end.getMonth() + s.m);
-  o.innerHTML = '<div class="lrow"><span>Meses para liquidar</span><b class="money">' + s.m + '</b></div><div class="lrow"><span>Fecha estimada</span><span class="money">' + end.toLocaleDateString("es-MX", { month: "short", year: "numeric" }) + '</span></div><div class="lrow"><span>Intereses totales</span><span class="money" style="color:var(--warn)">' + money(s.interes) + '</span></div><div class="lrow" style="border:0"><b style="font-weight:600">Total a pagar</b><b class="money">' + money(s.total) + '</b></div>';
-}
-export function openSim(id: any) {
-  const c = cardById(id); if (!c) return; simCardId = id;
-  $("simTitle").textContent = "Simular · " + c.name;
-  $("sim-info").textContent = "Saldo " + money(c.balance || 0) + " · interés " + (c.apr || 0) + "% anual" + (c.min ? " · mínimo " + money(c.min) : "");
-  $<HTMLInputElement>("sim-amt").value = String(cardPay(c) || c.min || ""); renderSim(); openModal("simModal");
-}
-
 /* ============ Cuenta ============ */
 let acctEdit: number | null = null, acctType = "debito";
 export function openAcct(id?: any) {
   const a = id ? DB.accounts.find((x) => x.id == id) : null; acctEdit = a ? a.id : null;
   $("acctTitle").textContent = a ? "Editar cuenta" : "Nueva cuenta";
   $<HTMLInputElement>("a-name").value = a ? a.name : ""; $<HTMLInputElement>("a-bank").value = a ? a.bank || "" : "";
+  $<HTMLInputElement>("a-alias").value = a && a.alias ? a.alias : "";
+  $<HTMLInputElement>("a-accountNo").value = a && a.accountNo ? a.accountNo : "";
+  $<HTMLInputElement>("a-clabe").value = a && a.clabe ? a.clabe : "";
+  $<HTMLInputElement>("a-cardNo").value = a && a.cardNo ? a.cardNo : "";
   $<HTMLInputElement>("a-bal").value = a && a.balance ? String(a.balance) : "";
   acctType = a ? a.type : "debito"; resetPills("a-type", acctType); openModal("acctModal");
 }
@@ -188,15 +177,10 @@ export function initModals() {
     save(); closeModal("payModal"); renderDinero("tarjetas");
   };
 
-  // simulador
-  $("sim-amt").addEventListener("input", renderSim);
-  $("sim-close").onclick = () => closeModal("simModal");
-  $("sim-save").onclick = () => { const c = cardById(simCardId); if (!c) return; c.planned = +$<HTMLInputElement>("sim-amt").value || 0; c.payType = "custom"; save(); closeModal("simModal"); renderDinero("tarjetas"); };
-
   // cuenta
   pillGroup($("a-type"), (v) => (acctType = v));
   $("a-cancel").onclick = () => closeModal("acctModal");
-  $("a-save").onclick = () => { const n = $<HTMLInputElement>("a-name").value.trim(); if (!n) { $("a-name").focus(); return; } const obj: any = { name: n, bank: $<HTMLInputElement>("a-bank").value.trim(), type: acctType, balance: +$<HTMLInputElement>("a-bal").value || 0 }; if (acctEdit) Object.assign(DB.accounts.find((x) => x.id == acctEdit)!, obj); else { obj.id = DB.accountSeq++; DB.accounts.push(obj); } save(); closeModal("acctModal"); renderDinero("debito"); };
+  $("a-save").onclick = () => { const n = $<HTMLInputElement>("a-name").value.trim(); if (!n) { $("a-name").focus(); return; } const obj: any = { name: n, bank: $<HTMLInputElement>("a-bank").value.trim(), alias: $<HTMLInputElement>("a-alias").value.trim(), accountNo: $<HTMLInputElement>("a-accountNo").value.trim(), clabe: $<HTMLInputElement>("a-clabe").value.trim(), cardNo: $<HTMLInputElement>("a-cardNo").value.trim(), type: acctType, balance: +$<HTMLInputElement>("a-bal").value || 0 }; if (acctEdit) Object.assign(DB.accounts.find((x) => x.id == acctEdit)!, obj); else { obj.id = DB.accountSeq++; DB.accounts.push(obj); } save(); closeModal("acctModal"); renderDinero("debito"); };
 
   // movimiento
   pillGroup($("t-type"), (v) => { txType = v; buildCats(v); updateMethodUI(); });
@@ -228,5 +212,5 @@ export function initModals() {
   };
 
   // cerrar al tocar el fondo
-  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "simModal", "buyModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
+  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
 }

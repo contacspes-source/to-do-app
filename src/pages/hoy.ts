@@ -6,6 +6,7 @@ import { $, qsa } from "../utils/dom";
 import { esc, cap, greeting, CHK } from "../utils/format";
 import type { Task } from "../types";
 import { openDetail } from "./tarea-detalle";
+import { dueBanners } from "../services/reminders";
 import { useSegment } from "../hooks/useSegment";
 
 let hoyMode = "hoy";
@@ -33,10 +34,11 @@ export function renderHoy() {
   $("date").textContent = new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
   const top = $("hoyTop"); top.innerHTML = "";
   const list = $("todayList"); list.innerHTML = "";
+  const banner = dueBanners().map((r) => '<div class="alert" style="border-color:var(--accent);color:var(--accent);background:var(--accent-dim)">' + esc(r) + '</div>').join("");
   const ts = DB.tasks, total = ts.length, done = ts.filter((t) => t.done).length;
   if (hoyMode === "hoy") {
     const pend = total - done, pct = total ? Math.round(done / total * 100) : 0;
-    top.innerHTML = '<div class="lede">' + (pend === 0 ? "Nada pendiente — disfruta tu día." : "Tienes " + pend + (pend === 1 ? " cosa" : " cosas") + " para hoy.") + '</div><div class="progress"><i style="width:' + pct + '%"></i></div><div class="progress-meta"><span>' + pct + '%</span><span>' + done + ' de ' + total + '</span></div>';
+    top.innerHTML = banner + '<div class="lede">' + (pend === 0 ? "Nada pendiente — disfruta tu día." : "Tienes " + pend + (pend === 1 ? " cosa" : " cosas") + " para hoy.") + '</div><div class="progress"><i style="width:' + pct + '%"></i></div><div class="progress-meta"><span>' + pct + '%</span><span>' + done + ' de ' + total + '</span></div>';
     if (total === 0) { list.innerHTML = '<div class="empty"><div class="big">Todo despejado</div>Agrega una tarea con +</div>'; return; }
     const feat = ts.filter((t) => t.featured && !t.done), rest = ts.filter((t) => !(t.featured && !t.done));
     if (feat.length) { addSect(list, "Lo importante de hoy"); feat.forEach((t) => list.appendChild(taskEl(t))); }
@@ -44,6 +46,7 @@ export function renderHoy() {
     rest.sort((a, b) => (+a.done - +b.done) || ((a.time || "~").localeCompare(b.time || "~")));
     rest.forEach((t) => list.appendChild(taskEl(t)));
   } else {
+    top.innerHTML = banner;
     ["Personal", "Trabajo", "Casa"].forEach((name) => {
       const g = ts.filter((t) => t.list === name); if (!g.length) return;
       const gd = g.filter((t) => t.done).length;

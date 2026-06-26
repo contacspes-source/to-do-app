@@ -22,7 +22,7 @@ export interface Card {
 }
 
 export type AccountType = "debito" | "ahorro" | "efectivo";
-export interface Account { id: number; name: string; bank?: string; type: AccountType; balance?: number; }
+export interface Account { id: number; name: string; bank?: string; type: AccountType; balance?: number; alias?: string; accountNo?: string; clabe?: string; cardNo?: string; }
 
 export type TxType = "gasto" | "ingreso";
 export type TxMethod = "efectivo" | "debito" | "credito";
@@ -48,6 +48,8 @@ export interface FoodProfile {
 export interface WeightEntry { date: string; kg: number; }
 export interface Measurement { date: string; waist?: number; chest?: number; hip?: number; arm?: number; thigh?: number; notes?: string; }
 export interface BodyPhoto { date: string; img: string; }
+export interface PantryItem { id: number; item: string; cat: string; expires?: string; }
+export interface Reminders { enabled?: boolean; desayuno?: string; comida?: string; cena?: string; groceryDay?: number; }
 
 export interface AppState {
   theme: "light" | "dark";
@@ -71,6 +73,7 @@ export interface AppState {
   foodProfile?: FoodProfile;
   mealPlan?: Record<string, string>; // slot -> id de receta
   mealPlanWeek?: string;             // semana ISO del plan vigente
+  mealPlanType?: string;             // variado | economica | proteina
   // ---- Seguimiento físico (MealPrep) ----
   weightLog?: WeightEntry[];
   measurements?: Measurement[];
@@ -78,4 +81,8 @@ export interface AppState {
   waterLog?: Record<string, number>; // dateKey -> litros registrados
   planLog?: Record<string, boolean>; // dateKey -> siguió el plan
   mealsLog?: Record<string, boolean>;// dateKey -> registró comidas
+  // ---- Refri, recordatorios, revisión ----
+  pantry?: PantryItem[]; pantrySeq?: number;
+  reminders?: Reminders;
+  review?: Record<string, boolean>;  // claveSemana::item -> hecho
 }

@@ -9,7 +9,7 @@
  */
 import { DB, save } from "../database/store";
 import type { FoodProfile } from "../types";
-import { RECIPES, recipesByMeal, recipeById, GROCERY_ORDER, type MealSlot, type GroceryCat, type Recipe } from "../database/recipes";
+import { RECIPES, recipesByMeal, recipeById, recipeMacros, GROCERY_ORDER, type MealSlot, type GroceryCat, type Recipe } from "../database/recipes";
 
 const SLOTS: MealSlot[] = ["desayuno", "colacion", "comida", "cena"];
 export const WEEK_DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -29,12 +29,20 @@ export function getPlan(): Record<string, string> {
   return DB.mealPlan!;
 }
 
-/** Genera un plan variado para los 7 días. fixedOats fija overnight oats algunos días. */
-export function generatePlan(fixedOats = true): void {
+function biasedPool(pool: Recipe[], type: string): Recipe[] {
+  if (type === "proteina") return [...pool].sort((a, b) => recipeMacros(b.id).p - recipeMacros(a.id).p);
+  if (type === "economica") { const eco = pool.filter((r) => r.tags?.some((t) => t === "economica" || t === "rapida")); return eco.length ? eco.concat(pool.filter((r) => !eco.includes(r))) : pool; }
+  return pool;
+}
+
+/** Genera un plan para los 7 días según el tipo (variado/económico/proteína). */
+export function generatePlan(type?: string, fixedOats = true): void {
+  type = type || DB.mealPlanType || "variado";
+  DB.mealPlanType = type;
   const plan: Record<string, string> = {};
   const pools: Record<MealSlot, Recipe[]> = {
-    desayuno: recipesByMeal("desayuno"), colacion: recipesByMeal("colacion"),
-    comida: recipesByMeal("comida"), cena: recipesByMeal("cena"),
+    desayuno: biasedPool(recipesByMeal("desayuno"), type), colacion: biasedPool(recipesByMeal("colacion"), type),
+    comida: biasedPool(recipesByMeal("comida"), type), cena: biasedPool(recipesByMeal("cena"), type),
   };
   const oats = RECIPES.filter((r) => r.tags?.includes("overnight"));
   for (let day = 0; day < 7; day++) {

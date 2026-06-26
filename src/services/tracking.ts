@@ -66,6 +66,26 @@ function complianceOf(pred: (day: string) => boolean, days = 30): number {
   return Math.round((ok / days) * 100);
 }
 export function planCompliance(days = 30) { const pl = DB.planLog || {}; return complianceOf((d) => pl[d] === true, days); }
+function countOf(pred: (d: string) => boolean, days = 30): number { let n = 0; const d = new Date(); for (let i = 0; i < days; i++) { if (pred(isoDay(d))) n++; d.setDate(d.getDate() - 1); } return n; }
+export function metrics(days = 30) {
+  const W = DB.weightLog || [], wa = DB.waterLog || {}, pl = DB.planLog || {}, ml = DB.mealsLog || {}, t = DB.foodProfile?.waterTargetL || 3;
+  return {
+    days,
+    comidas: countOf((d) => ml[d] === true, days),
+    plan: countOf((d) => pl[d] === true, days),
+    peso: countOf((d) => W.some((w) => w.date === d), days),
+    agua: countOf((d) => (wa[d] || 0) >= t, days),
+  };
+}
+export function pendingToday(): string[] {
+  const d = isoDay(), wa = DB.waterLog || {}, pl = DB.planLog || {}, ml = DB.mealsLog || {}, t = DB.foodProfile?.waterTargetL || 3;
+  const out: string[] = [];
+  if (!ml[d]) out.push("Registrar tus comidas");
+  if (!pl[d]) out.push("Marcar que seguiste el plan");
+  if (!todayWeight()) out.push("Registrar tu peso");
+  if ((wa[d] || 0) < t) out.push("Cumplir tu hidratación (" + t + " L)");
+  return out;
+}
 export function waterCompliance(days = 30) { const wa = DB.waterLog || {}, t = DB.foodProfile?.waterTargetL || 3; return complianceOf((d) => (wa[d] || 0) >= t, days); }
 
 /** Serie de peso agrupada por semana o por mes (promedio). */
