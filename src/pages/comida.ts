@@ -16,11 +16,11 @@ import * as P from "../services/pantry";
 import { lineChart, progressBar } from "../components/charts";
 import { SUPP_SUGGESTIONS } from "../database/supplements";
 
-let comidaSeg = "plan";
+let comidaSeg = (() => { try { return localStorage.getItem("misem_comida") || "plan"; } catch { return "plan"; } })();
 const SLOTS: MealSlot[] = ["desayuno", "colacion", "comida", "cena"];
 const SHORT = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 let openDay = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-let perfilBlock = "fisico";
+let perfilBlock = (() => { try { return localStorage.getItem("misem_perfil") || "fisico"; } catch { return "fisico"; } })();
 let progGroup: "week" | "month" = "week";
 let newPantryCat = GROCERY_ORDER[1];
 
@@ -196,13 +196,14 @@ function renderPerfil(w: HTMLElement) {
   else if (perfilBlock === "progreso") blockProgreso(b);
   else if (perfilBlock === "rachas") blockRachas(b);
   else blockStats(b);
-  qsa<HTMLElement>("#perfilseg button", w).forEach((bt) => (bt.onclick = () => { perfilBlock = bt.dataset.v!; renderComida("perfil"); }));
+  qsa<HTMLElement>("#perfilseg button", w).forEach((bt) => (bt.onclick = () => { perfilBlock = bt.dataset.v!; try { localStorage.setItem("misem_perfil", perfilBlock); } catch {} renderComida("perfil"); }));
 }
 
 function blockFisico(b: HTMLElement) {
   const p = DB.foodProfile!; const t = nutritionTargets(p); const cur = T.latestWeight(); const tw = T.todayWeight();
-  let h = '<div class="stat-row"><div class="stat"><div class="n">' + cur + '</div><div class="l">Peso (kg)</div></div><div class="stat"><div class="n">' + T.imc(cur) + '</div><div class="l">IMC</div></div><div class="stat"><div class="n">' + (p.targetWeight || cur) + '</div><div class="l">Objetivo</div></div></div>';
-  h += '<div class="stat-row" style="margin-top:10px"><div class="stat"><div class="n">' + t.kcal + '</div><div class="l">kcal/día</div></div><div class="stat"><div class="n">' + t.protein + 'g</div><div class="l">Proteína</div></div><div class="stat"><div class="n">' + p.waterTargetL + 'L</div><div class="l">Agua/día</div></div></div>';
+  let h = '<div class="block"><div class="block-h">Información física</div>';
+  h += '<div class="stat-row"><div class="stat"><div class="n">' + cur + '</div><div class="l">Peso (kg)</div></div><div class="stat"><div class="n">' + T.imc(cur) + '</div><div class="l">IMC</div></div><div class="stat"><div class="n">' + (p.targetWeight || cur) + '</div><div class="l">Objetivo</div></div></div>';
+  h += '<div class="stat-row" style="margin-top:10px"><div class="stat"><div class="n">' + t.kcal + '</div><div class="l">kcal/día</div></div><div class="stat"><div class="n">' + t.protein + 'g</div><div class="l">Proteína</div></div><div class="stat"><div class="n">' + p.waterTargetL + 'L</div><div class="l">Agua/día</div></div></div></div>';
   // ---- Bloque: Registro diario ----
   h += '<div class="block"><div class="block-h">Registro diario</div>';
   h += '<div class="field row2" style="margin-bottom:10px"><div><span class="label">Peso de hoy (kg)</span><input class="input mono" id="tk-weight" type="number" step="0.1" value="' + (tw ? tw.kg : "") + '" placeholder="' + cur + '"></div><div><span class="label">Agua de hoy (L)</span><input class="input mono" id="tk-water" type="number" step="0.25" value="' + (DB.waterLog?.[T.isoDay()] ?? "") + '"></div></div>';
@@ -254,11 +255,12 @@ function blockProgreso(b: HTMLElement) {
 
 function blockRachas(b: HTMLElement) {
   const st = T.streaks(); const pend = T.pendingToday();
-  let h = '<div class="stat-row"><div class="stat"><div class="n">' + st.plan + '</div><div class="l">Plan</div></div><div class="stat"><div class="n">' + st.comidas + '</div><div class="l">Comidas</div></div><div class="stat"><div class="n">' + st.peso + '</div><div class="l">Peso</div></div><div class="stat"><div class="n">' + st.agua + '</div><div class="l">Hidratación</div></div></div>';
-  h += '<div class="note">Días consecutivos. Si dejas un día sin registrar, esa racha se reinicia.</div>';
-  h += '<div class="sect">Pendiente hoy</div>';
-  if (!pend.length) h += '<div class="card-pad"><div style="font-size:14px;color:var(--ink-1)">¡Todo registrado hoy! 4/4 rachas activas.</div></div>';
+  let h = '<div class="block"><div class="block-h">Rachas</div><div class="stat-row"><div class="stat"><div class="n">' + st.plan + '</div><div class="l">Plan</div></div><div class="stat"><div class="n">' + st.comidas + '</div><div class="l">Comidas</div></div><div class="stat"><div class="n">' + st.peso + '</div><div class="l">Peso</div></div><div class="stat"><div class="n">' + st.agua + '</div><div class="l">Hidratación</div></div></div>';
+  h += '<div class="note" style="margin-bottom:0">Días consecutivos. Si dejas un día sin registrar, esa racha se reinicia.</div></div>';
+  h += '<div class="block"><div class="block-h">Pendiente hoy</div>';
+  if (!pend.length) h += '<div style="font-size:14px;color:var(--ink-1)">¡Todo registrado hoy! 4/4 rachas activas.</div>';
   else pend.forEach((x) => (h += '<div class="lrow"><span>' + esc(x) + '</span><span class="ld">pendiente</span></div>'));
+  h += '</div>';
   b.innerHTML = h;
 }
 
@@ -279,5 +281,5 @@ function blockStats(b: HTMLElement) {
 }
 
 export function initComida() {
-  useSegment("comidaseg", "plan", (v) => { comidaSeg = v; renderComida(v); });
+  useSegment("comidaseg", comidaSeg, (v) => { comidaSeg = v; try { localStorage.setItem("misem_comida", v); } catch {} renderComida(v); });
 }
