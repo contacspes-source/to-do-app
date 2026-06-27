@@ -2,6 +2,7 @@
  * finance/calc.ts — agregados financieros: totales, promedios, proyección y alertas.
  */
 import { DB } from "../database/store";
+import { paidThisCycle } from "./cards";
 
 import { money } from "../utils/format";
 

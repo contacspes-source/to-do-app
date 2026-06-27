@@ -48,3 +48,17 @@ export function paySim(bal: number, apr: number, pay: number): SimResult {
   while (b > 0.005 && m < 1200) { b += b * r; const p = Math.min(pay, b); b -= p; paid += p; m++; }
   return { m, interes: paid - bal, total: paid, ok: true };
 }
+
+
+/** Inicio del ciclo actual de la tarjeta según su día de corte. */
+export function cycleStart(cut: number): Date {
+  const now = new Date(); let m = now.getMonth(), y = now.getFullYear();
+  if (now.getDate() < cut) { m -= 1; if (m < 0) { m = 11; y -= 1; } }
+  return new Date(y, m, cut);
+}
+/** ¿Ya registraste un pago en el ciclo vigente? */
+export function paidThisCycle(c: Card): boolean {
+  if (!c.lastPayDate) return false;
+  const start = c.cut ? cycleStart(+c.cut) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  return new Date(c.lastPayDate) >= start;
+}

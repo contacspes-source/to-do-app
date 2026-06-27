@@ -8,6 +8,8 @@
 import { DB, save } from "../database/store";
 import * as T from "../services/tracking";
 import { totalDebito, nextDateForDay } from "../finance/calc";
+import { cardPay, paidThisCycle } from "../finance/cards";
+import { money } from "../utils/format";
 
 export interface TodayItem {
   id: string;
@@ -31,9 +33,9 @@ export function buildToday(): TodayItem[] {
 
   // 1) Finanzas: pagos próximos (urgente, no cuenta para momentum)
   (DB.cards || []).forEach((c) => {
-    if (c.active === false || !((c.balance || 0) > 0) || !c.pay) return;
+    if (c.active === false || !((c.balance || 0) > 0) || !c.pay || paidThisCycle(c)) return;
     const d = dnext(+c.pay);
-    if (d >= 0 && d <= 5) items.push({ id: "pay-" + c.id, label: "Pagar " + c.name, meta: d === 0 ? "vence hoy" : "vence en " + d + "d", group: "urgente", done: false, prio: d, track: false, goto: { screen: "dinero" } });
+    if (d >= 0 && d <= 5) { const amt = cardPay(c) || c.min || 0; items.push({ id: "pay-" + c.id, label: "Pagar " + c.name, meta: (amt ? money(amt) + " · " : "") + (d === 0 ? "vence hoy" : "vence en " + d + "d"), group: "urgente", done: false, prio: d, track: false, goto: { screen: "dinero" } }); }
   });
 
   // 2) Salud (cuentan para momentum)

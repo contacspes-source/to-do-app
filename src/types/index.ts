@@ -18,7 +18,7 @@ export interface Card {
   limit?: number; balance?: number; apr?: number; cut?: number | string;
   pay?: number | string; min?: number; planned?: number; payType?: PayType;
   color?: string; grad?: string; tpl?: number; img?: string; bg?: CardBgMode;
-  active?: boolean;
+  active?: boolean; lastPayDate?: string;
 }
 
 export type AccountType = "debito" | "ahorro" | "efectivo";
