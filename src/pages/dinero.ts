@@ -19,6 +19,7 @@ let dinSeg = "home";
 let proyH = 1;
 let dashEdit = false;
 let histCard: any = null; // filtro de historial por tarjeta
+let histAcct: any = null; // filtro de historial por cuenta
 
 export function setDineroSeg(seg: string) { dinSeg = seg; }
 
@@ -58,14 +59,19 @@ function renderDashboard(w: HTMLElement) {
     '<div class="qcard"><div class="ql">¿Cuánto tengo?</div><div class="qv">' + money(cash) + '</div></div>' +
     '<div class="qcard"><div class="ql">¿Cuánto debo?</div><div class="qv' + (deuda > 0 ? " warn" : "") + '">' + money(deuda) + '</div></div>' +
     '<div class="qcard"><div class="ql">¿Qué vence pronto?</div><div class="qv2">' + esc(nextTxt) + '</div></div>' +
-    '<div class="qcard"><div class="ql">¿Qué hacer ahora?</div><div class="qv2">' + (alerts.length ? esc(alerts[0]) : "Todo en orden") + '</div></div>' +
+    '<div class="qcard"><div class="ql">¿Qué hacer ahora?</div><div class="qv2">' + (alerts.length ? esc(alerts[0].text) : "Todo en orden") + '</div></div>' +
     '</div>';
-  if (alerts.length > 1) { h += '<div class="sect">Alertas</div>'; alerts.slice(1, 4).forEach((a) => (h += '<div class="alert">' + esc(a) + '</div>')); }
+  const restA = alerts.slice().sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0)).slice(1, 4);
+  if (restA.length) { h += '<div class="sect">Recordatorios</div>'; restA.forEach((a) => (h += '<div class="alert' + (a.urgent ? ' urgent' : '') + '">' + esc(a.text) + '</div>')); }
 
   // accesos (configurables: fijar / ocultar / reordenar por fijado)
   const pins = DB.finPins || [], hidden = DB.finHidden || [];
   const items = dashItems();
-  const ordered = items.slice().sort((a, b) => (pins.includes(b.key) ? 1 : 0) - (pins.includes(a.key) ? 1 : 0));
+  let order = (DB.finOrder && DB.finOrder.length) ? DB.finOrder.slice() : items.map((i) => i.key);
+  items.forEach((i) => { if (!order.includes(i.key)) order.push(i.key); });
+  order = order.filter((k) => items.some((i) => i.key === k));
+  if (!DB.finOrder || !DB.finOrder.length) DB.finOrder = order.slice();
+  const ordered = order.map((k) => items.find((i) => i.key === k)!).sort((a, b) => (pins.includes(b.key) ? 1 : 0) - (pins.includes(a.key) ? 1 : 0));
   h += '<div class="sect" style="display:flex;justify-content:space-between;align-items:center">Accesos<button class="lnk" id="dashEditBtn">' + (dashEdit ? "Listo" : "Editar") + '</button></div>';
   h += '<div class="dash">';
   ordered.forEach((it) => {
@@ -74,12 +80,13 @@ function renderDashboard(w: HTMLElement) {
     h += '<div class="dash-card' + (isHidden ? " dimmed" : "") + '" data-dash="' + it.key + '">' +
       (isPin ? '<span class="dc-pin">●</span>' : '') +
       '<span class="dc-ic">' + icon(it.icon, 22) + '</span><span class="dc-name">' + it.name + '</span><span class="dc-desc">' + it.desc + '</span><span class="dc-ind">' + it.ind() + '</span>' +
-      (dashEdit ? '<span class="dc-edit"><button data-pin="' + it.key + '">' + (isPin ? "Fijado" : "Fijar") + '</button><button data-hide="' + it.key + '">' + (isHidden ? "Mostrar" : "Ocultar") + '</button></span>' : '') +
+      (dashEdit ? '<span class="dc-edit"><button data-mv="up:' + it.key + '">↑</button><button data-mv="down:' + it.key + '">↓</button><button data-pin="' + it.key + '">' + (isPin ? "Fijado" : "Fijar") + '</button><button data-hide="' + it.key + '">' + (isHidden ? "Mostrar" : "Ocultar") + '</button></span>' : '') +
       '</div>';
   });
   h += '</div>';
   w.innerHTML = h;
   $("dashEditBtn").onclick = () => { dashEdit = !dashEdit; renderDashboard(w); };
+  qsa<HTMLElement>("[data-mv]", w).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const [dir, k] = b.dataset.mv!.split(":"); const o = (DB.finOrder || []).slice(); const i = o.indexOf(k); const j = dir === "up" ? i - 1 : i + 1; if (i >= 0 && j >= 0 && j < o.length) { const t = o[i]; o[i] = o[j]; o[j] = t; DB.finOrder = o; save(); renderDashboard(w); } }));
   qsa<HTMLElement>("[data-pin]", w).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const k = b.dataset.pin!; DB.finPins = pins.includes(k) ? pins.filter((x) => x !== k) : [...pins, k]; save(); renderDashboard(w); }));
   qsa<HTMLElement>("[data-hide]", w).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const k = b.dataset.hide!; DB.finHidden = hidden.includes(k) ? hidden.filter((x) => x !== k) : [...hidden, k]; save(); renderDashboard(w); }));
   qsa<HTMLElement>("[data-dash]", w).forEach((b) => (b.onclick = () => { if (dashEdit) return; histCard = null; renderDinero(b.dataset.dash!); }));
@@ -164,7 +171,7 @@ export function renderDinero(seg = dinSeg) {
       if (a.clabe) det.push(acctDetail("CLABE", a.clabe));
       if (a.cardNo) det.push(acctDetail("Tarjeta", a.cardNo));
       if (det.length) h += '<div class="acc-details">' + det.join("") + '</div>';
-      h += '<div class="ccact">' + (det.length ? '<button data-share="' + a.id + '">' + icon("share", 15) + ' Compartir</button>' : '') + '<button data-edita="' + a.id + '">Editar</button></div></div>';
+      h += '<div class="ccact"><button data-histacct="' + a.id + '">Movimientos</button>' + (det.length ? '<button data-share="' + a.id + '">' + icon("share", 15) + ' Compartir</button>' : '') + '<button data-edita="' + a.id + '">Editar</button></div></div>';
     });
     h += '<button class="btn btn-primary" id="addAcct">+ Agregar cuenta</button>';
     w.innerHTML = h;
@@ -173,15 +180,16 @@ export function renderDinero(seg = dinSeg) {
     qsa<HTMLElement>("[data-dela]", w).forEach((b) => (b.onclick = () => { if (confirm("¿Eliminar esta cuenta?")) { DB.accounts = DB.accounts.filter((x) => x.id != (b.dataset.dela as any)); save(); renderDinero("debito"); } }));
     qsa<HTMLElement>("[data-copy]", w).forEach((b) => (b.onclick = () => copyText(b.dataset.copy || "", b)));
     qsa<HTMLElement>("[data-share]", w).forEach((b) => (b.onclick = () => shareAcct(acctById(b.dataset.share))));
+    qsa<HTMLElement>("[data-histacct]", w).forEach((b) => (b.onclick = () => { histAcct = b.dataset.histacct; histCard = null; renderDinero("movs"); }));
   } else if (seg === "movs") {
-    const base = histCard ? mt.filter((t) => t.method === "credito" && t.cardId == histCard) : mt;
-    if (histCard) { const c = cardById(histCard); h += '<div class="note" style="margin-top:0">Historial de <b>' + esc(c ? c.name : "") + '</b>. <a id="histAll" style="cursor:pointer;color:var(--accent)">Ver todos</a></div>'; }
+    const base = histCard ? mt.filter((t) => t.method === "credito" && t.cardId == histCard) : histAcct ? mt.filter((t) => t.method !== "credito" && t.acctId == histAcct) : mt;
+    if (histCard || histAcct) { const nm = histCard ? (cardById(histCard) || {}).name : (acctById(histAcct) || {}).name; h += '<div class="note" style="margin-top:0">Historial de <b>' + esc(nm || "") + '</b>. <a id="histAll" style="cursor:pointer;color:var(--accent)">Ver todos</a></div>'; }
     h += '<button class="btn btn-primary" id="addTx">+ Registrar movimiento</button><div class="sect">Este mes</div>';
     h += txListHtml(base);
     if (!base.length) h += '<div class="note">Sin movimientos.</div>';
     w.innerHTML = h;
     $("addTx").onclick = () => openTx();
-    const ha = $("histAll"); if (ha) ha.onclick = () => { histCard = null; renderDinero("movs"); };
+    const ha = $("histAll"); if (ha) ha.onclick = () => { histCard = null; histAcct = null; renderDinero("movs"); };
     wireTxDelete(w);
   } else if (seg === "deuda") {
     h += '<div class="card-pad" style="text-align:center"><div class="l" style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-mono)">Deuda total</div><div class="big-money" style="margin-top:8px;color:' + (deuda > 0 ? "var(--warn)" : "var(--ink-1)") + '">' + money(deuda) + '</div></div>';
@@ -243,7 +251,7 @@ export function renderDinero(seg = dinSeg) {
     h += '<div class="note">Estimaciones basadas en tu historial. No es asesoría financiera.</div>';
     w.innerHTML = h; buildProySeg();
   }
-  const back = $("dinBack"); if (back) back.onclick = () => { histCard = null; renderDinero("home"); };
+  const back = $("dinBack"); if (back) back.onclick = () => { histCard = null; histAcct = null; renderDinero("home"); };
 }
 
 /* ---------- Orden automático de tarjetas ---------- */

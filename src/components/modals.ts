@@ -34,7 +34,7 @@ function updateCardPreview() {
   const p = $("c-preview"); if (!p) return; p.style.background = previewBg();
   const bank = $<HTMLInputElement>("c-bank").value.trim(), name = $<HTMLInputElement>("c-name").value.trim(), alias = $<HTMLInputElement>("c-alias").value.trim(), l4 = $<HTMLInputElement>("c-last4").value.trim();
   $("cp-bank").textContent = bank || name || "Banco"; $("cp-alias").textContent = alias || name || "Alias";
-  $("cp-logo").textContent = bank ? bank.charAt(0).toUpperCase() : "💳"; $("cp-num").textContent = l4 ? "•••• " + l4 : "•••• ••••";
+  $("cp-logo").textContent = bank ? bank.charAt(0).toUpperCase() : "$"; $("cp-num").textContent = l4 ? "•••• " + l4 : "•••• ••••";
 }
 function showBgWrap() { $("c-color-wrap").style.display = cardBgMode === "color" ? "block" : "none"; $("c-grad-wrap").style.display = cardBgMode === "gradient" ? "block" : "none"; $("c-tpl-wrap").style.display = cardBgMode === "template" ? "block" : "none"; $("c-img-wrap").style.display = cardBgMode === "image" ? "block" : "none"; }
 function downscaleImg(file: File, cb: (d: string) => void) {
@@ -226,5 +226,5 @@ export function initModals() {
   };
 
   // cerrar al tocar el fondo
-  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
+  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal", "chooseModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
 }

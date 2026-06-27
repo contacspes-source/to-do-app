@@ -47,22 +47,23 @@ export function monthlySubs(): number {
   return sum((DB.subs || []).filter((s) => s.active !== false).map((s) => s.amount || 0));
 }
 
-export function computeAlerts(): string[] {
-  const A: string[] = [], today = new Date();
-  DB.cards.forEach((c) => { if (c.active === false) return; const u = c.limit ? (c.balance || 0) / c.limit : 0; if (u > 0.7) A.push("⚠ " + c.name + " supera 70% de uso (" + Math.round(u * 100) + "%)"); });
-  DB.cards.forEach((c) => { if (c.active === false) return; const mn = +(c.min || 0); if (cardPayType(c) === "custom" && mn > 0 && cardPay(c) < mn) A.push("⚠ Pago de " + c.name + " (" + money(cardPay(c)) + ") es menor al mínimo (" + money(mn) + ")"); });
-  DB.cards.forEach((c) => { if (c.active === false || !((c.balance || 0) > 0) || !c.pay) return; const d = nextDateForDay(+c.pay), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push("⚠ Pago de " + c.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : ""))); });
-  (DB.subs || []).forEach((s) => { if (s.active === false || !s.day) return; const d = nextDateForDay(+s.day), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push("⚠ Cobro de " + s.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : ""))); });
+export interface Alert { text: string; urgent: boolean; }
+export function computeAlerts(): Alert[] {
+  const A: Alert[] = [], today = new Date();
+  DB.cards.forEach((c) => { if (c.active === false) return; const u = c.limit ? (c.balance || 0) / c.limit : 0; if (u > 0.7) A.push({ text: c.name + " supera 70% de uso (" + Math.round(u * 100) + "%)", urgent: false }); });
+  DB.cards.forEach((c) => { if (c.active === false) return; const mn = +(c.min || 0); if (cardPayType(c) === "custom" && mn > 0 && cardPay(c) < mn) A.push({ text: "Pago de " + c.name + " menor al mínimo (" + money(mn) + ")", urgent: true }); });
+  DB.cards.forEach((c) => { if (c.active === false || !((c.balance || 0) > 0) || !c.pay) return; const d = nextDateForDay(+c.pay), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push({ text: "Pago de " + c.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : "")), urgent: days <= 2 }); });
+  (DB.subs || []).forEach((s) => { if (s.active === false || !s.day) return; const d = nextDateForDay(+s.day), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push({ text: "Cobro de " + s.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : "")), urgent: days <= 1 }); });
   const cm = today.getMonth(), cy = today.getFullYear(), curCat: Record<string, number> = {}, prevCat: Record<string, Record<string, number>> = {};
   DB.tx.filter((t) => t.type === "gasto").forEach((t) => {
     const d = new Date(t.date);
     if (d.getMonth() === cm && d.getFullYear() === cy) curCat[t.cat] = (curCat[t.cat] || 0) + t.amount;
     else { const key = d.getFullYear() + "-" + d.getMonth(); prevCat[t.cat] = prevCat[t.cat] || {}; prevCat[t.cat][key] = (prevCat[t.cat][key] || 0) + t.amount; }
   });
-  Object.keys(curCat).forEach((cat) => { const hist = prevCat[cat]; if (!hist) return; const ks = Object.keys(hist); if (!ks.length) return; const avg = sum(ks.map((k) => hist[k])) / ks.length; if (avg > 0 && curCat[cat] > avg * 1.3) A.push("⚠ Gastaste más en " + cat + " este mes (" + money(curCat[cat]) + " vs prom. " + money(avg) + ")"); });
+  Object.keys(curCat).forEach((cat) => { const hist = prevCat[cat]; if (!hist) return; const ks = Object.keys(hist); if (!ks.length) return; const avg = sum(ks.map((k) => hist[k])) / ks.length; if (avg > 0 && curCat[cat] > avg * 1.3) A.push({ text: "Gastaste más en " + cat + " este mes (" + money(curCat[cat]) + ")", urgent: false }); });
   const cash = totalDebito(); let due = 0;
   DB.cards.forEach((c) => { if (c.active !== false && (c.balance || 0) > 0 && c.pay) { const d = nextDateForDay(+c.pay); if ((+d - +today) / 864e5 <= 14) due += c.balance || 0; } });
   (DB.subs || []).forEach((s) => { if (s.active !== false && s.day) { const d = nextDateForDay(+(s.day as number)); if ((+d - +today) / 864e5 <= 14) due += s.amount || 0; } });
-  if (due > cash && due > 0) A.push("⚠ Tus pagos de los próximos 14 días (" + money(due) + ") superan tu efectivo (" + money(cash) + ")");
+  if (due > cash && due > 0) A.push({ text: "Tus pagos de 14 días (" + money(due) + ") superan tu efectivo (" + money(cash) + ")", urgent: true });
   return A;
 }

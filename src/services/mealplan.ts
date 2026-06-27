@@ -92,6 +92,11 @@ export function generatePlan(type?: string): void {
   });
   DB.mealPlan = plan;
   DB.mealPlanWeek = weekKey();
+  // Mantener la lista del súper sincronizada: quitar marcados que ya no aplican
+  const valid = new Set<string>();
+  groceryList().forEach((g) => g.items.forEach((it) => valid.add(g.cat + ":" + it.item)));
+  DB.comidaCheck = DB.comidaCheck || {};
+  Object.keys(DB.comidaCheck).forEach((k) => { if (!valid.has(k)) delete DB.comidaCheck![k]; });
   save();
 }
 

@@ -60,6 +60,8 @@ function migrate() {
   DB.review = DB.review || {};
   DB.finPins = DB.finPins || [];
   DB.finHidden = DB.finHidden || [];
+  DB.finOrder = DB.finOrder || [];
+  DB.mealState = DB.mealState || {};
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }

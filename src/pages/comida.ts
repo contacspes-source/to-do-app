@@ -5,10 +5,10 @@
  * (bloques: Físico, Progreso, Rachas, Estadísticas).
  */
 import { DB, save } from "../database/store";
-import { $, qsa, pillGroup } from "../utils/dom";
+import { $, qsa, pillGroup, openModal, closeModal } from "../utils/dom";
 import { esc } from "../utils/format";
 import { RECIPES, recipesByMeal, MEAL_LABELS, recipeMacros, GROCERY_ORDER, type MealSlot } from "../database/recipes";
-import { getPlan, generatePlan, setPlanSlot, recipesForDay, groceryList, nutritionTargets, WEEK_DAYS } from "../services/mealplan";
+import { getPlan, generatePlan, setPlanSlot, recipesForDay, groceryList, nutritionTargets, WEEK_DAYS, weekKey } from "../services/mealplan";
 import { openBuyGrocery, openRecipe } from "../components/modals";
 import { useSegment } from "../hooks/useSegment";
 import * as T from "../services/tracking";
@@ -36,17 +36,37 @@ function downscalePhoto(file: File, cb: (d: string) => void) {
 function dayView(day: number): string {
   const meals = recipesForDay(day);
   const tot = meals.reduce((a, { recipe }) => { if (recipe) { const m = recipeMacros(recipe.id); a.k += m.kcal; a.p += m.p; a.c += m.c; a.f += m.f; } return a; }, { k: 0, p: 0, c: 0, f: 0 });
-  const tgt = nutritionTargets();
+  const tgt = nutritionTargets(); const wk = weekKey();
   let v = '<div class="dayview"><div class="dv-head">' + WEEK_DAYS[day] + '<span class="dv-k" id="dvtot">' + tot.k + ' kcal</span></div><div class="dv-body">';
   meals.forEach(({ slot, label, pool, recipe }) => {
-    const opts = recipesByMeal(pool).map((r) => '<option value="' + r.id + '"' + (recipe && r.id === recipe.id ? " selected" : "") + '>' + esc(r.name) + '</option>').join("");
-    v += '<div class="dv-meal"><div class="dv-mhead"><span class="dv-slot">' + label + '</span>' + (recipe ? '<button class="rc-help" data-recipe="' + recipe.id + '" aria-label="Ver receta">?</button>' : "") + '</div>';
-    v += '<select class="input mono select" data-day="' + day + '" data-slot="' + slot + '" style="margin-top:6px">' + opts + '</select>';
-    v += '<div class="mchips" id="mch-' + slot + '">' + (recipe ? macroChips(recipe.id) : "") + '</div></div>';
+    const mk = wk + "-" + day + "-" + slot; const st = (DB.mealState || {})[mk] || {};
+    v += '<div class="dv-meal">';
+    v += '<div class="dv-mhead"><span class="dv-slot">' + label + '</span><span class="dv-rname">' + (recipe ? esc(recipe.name) : "—") + '</span></div>';
+    v += '<div class="mchips">' + (recipe ? macroChips(recipe.id) : "") + '</div>';
+    v += '<div class="dv-acts">' +
+      (recipe ? '<button data-recipe="' + recipe.id + '">Receta</button>' : "") +
+      '<button data-change="' + slot + '" data-pool="' + pool + '" data-day="' + day + '">Cambiar</button>' +
+      '<button class="tgl' + (st.prep ? " on" : "") + '" data-prep="' + mk + '">Preparada</button>' +
+      '<button class="tgl' + (st.cons ? " on" : "") + '" data-cons="' + mk + '">Consumida</button>' +
+      '</div></div>';
   });
   v += '</div></div>';
   v += '<div class="daytot">Total del día: <b>' + tot.k + ' kcal</b> · P ' + tot.p + 'g · C ' + tot.c + 'g · G ' + tot.f + 'g <span class="note" style="margin:0">(meta ~' + tgt.kcal + ' kcal · ' + tgt.protein + 'g prot.)</span></div>';
   return v;
+}
+
+function toggleMeal(mk: string, kind: "prep" | "cons") {
+  DB.mealState = DB.mealState || {};
+  const st = DB.mealState[mk] || (DB.mealState[mk] = {});
+  st[kind] = !st[kind]; save();
+}
+function openChooser(day: number, slot: string, pool: MealSlot) {
+  $("ch-title").textContent = "Elegir comida";
+  $("ch-sub").textContent = "Toca una receta para reemplazar este tiempo.";
+  const list = $("ch-list");
+  list.innerHTML = recipesByMeal(pool).map((r) => '<button class="ch-item" data-pick="' + r.id + '"><span>' + esc(r.name) + '</span><span class="ld">' + recipeMacros(r.id).kcal + ' kcal</span></button>').join("");
+  qsa<HTMLElement>("[data-pick]", list).forEach((b) => (b.onclick = () => { setPlanSlot(day, slot, b.dataset.pick!); closeModal("chooseModal"); renderComida("plan"); }));
+  openModal("chooseModal");
 }
 
 export function renderComida(seg = comidaSeg) {
@@ -63,14 +83,10 @@ export function renderComida(seg = comidaSeg) {
     w.innerHTML = h;
     qsa<HTMLElement>("#plantype button", w).forEach((b) => (b.onclick = () => { generatePlan(b.dataset.v!); renderComida("plan"); }));
     qsa<HTMLElement>("[data-day]", w).forEach((b) => (b.onclick = () => { openDay = +b.dataset.day!; renderComida("plan"); }));
-    qsa<HTMLSelectElement>("select[data-slot]", w).forEach((sel) => (sel.onchange = () => {
-      const day = +sel.dataset.day!, slot = sel.dataset.slot!;
-      setPlanSlot(day, slot, sel.value);
-      const ch = document.getElementById("mch-" + slot); if (ch) ch.innerHTML = macroChips(sel.value);
-      const k = recipesForDay(day).reduce((a, { recipe }) => a + (recipe ? recipeMacros(recipe.id).kcal : 0), 0);
-      const tt = document.getElementById("dvtot"); if (tt) tt.textContent = k + " kcal";
-    }));
     qsa<HTMLElement>("[data-recipe]", w).forEach((b) => (b.onclick = () => openRecipe(b.dataset.recipe!)));
+    qsa<HTMLElement>("[data-change]", w).forEach((b) => (b.onclick = () => openChooser(+b.dataset.day!, b.dataset.change!, b.dataset.pool as MealSlot)));
+    qsa<HTMLElement>("[data-prep]", w).forEach((b) => (b.onclick = () => { toggleMeal(b.dataset.prep!, "prep"); renderComida("plan"); }));
+    qsa<HTMLElement>("[data-cons]", w).forEach((b) => (b.onclick = () => { toggleMeal(b.dataset.cons!, "cons"); renderComida("plan"); }));
     $("regenPlan").onclick = () => { generatePlan(DB.mealPlanType); renderComida("plan"); };
 
   } else if (seg === "recetas") {

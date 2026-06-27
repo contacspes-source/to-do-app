@@ -336,3 +336,89 @@ export function recipeInfo(r: Recipe): { time: string; keep: string } {
   else if (r.meal === "colacion") keep = "Pórtalo en un tóper; consúmelo el mismo día.";
   return { time, keep };
 }
+
+/* ============================================================
+   Generador de recetas: amplía el catálogo a 100+ combinando
+   componentes permitidos (sin jitomate, calabaza, champiñón,
+   edamame ni espinaca). Macros sumadas de cada componente.
+   ============================================================ */
+type Comp = { item: string; qty: string; cat: GroceryCat; m: Macros };
+const PROT: Record<string, Comp> = {
+  pollo: { item: "Pechuga de pollo", qty: "150 g", cat: "Proteínas", m: { kcal: 165, p: 33, c: 0, f: 4 } },
+  res: { item: "Res magra", qty: "140 g", cat: "Proteínas", m: { kcal: 250, p: 36, c: 0, f: 11 } },
+  atun: { item: "Atún en agua", qty: "1 lata", cat: "Proteínas", m: { kcal: 120, p: 26, c: 0, f: 1 } },
+  huevo: { item: "Huevo", qty: "3 pzas", cat: "Proteínas", m: { kcal: 215, p: 18, c: 1, f: 15 } },
+  panela: { item: "Queso panela", qty: "90 g", cat: "Lácteos", m: { kcal: 200, p: 16, c: 3, f: 14 } },
+  frijol: { item: "Frijol", qty: "½ taza", cat: "Cereales y granos", m: { kcal: 110, p: 7, c: 20, f: 0 } },
+  requeson: { item: "Requesón", qty: "120 g", cat: "Lácteos", m: { kcal: 160, p: 14, c: 4, f: 9 } },
+};
+const CARB: Record<string, Comp> = {
+  arroz: { item: "Arroz", qty: "1 taza", cat: "Cereales y granos", m: { kcal: 205, p: 4, c: 45, f: 0 } },
+  pasta: { item: "Pasta", qty: "1 taza", cat: "Cereales y granos", m: { kcal: 200, p: 7, c: 42, f: 1 } },
+  tortilla: { item: "Tortilla de maíz", qty: "3 pzas", cat: "Cereales y granos", m: { kcal: 210, p: 6, c: 42, f: 3 } },
+  papa: { item: "Papa", qty: "1 pza", cat: "Verduras", m: { kcal: 160, p: 4, c: 36, f: 0 } },
+  camote: { item: "Camote", qty: "1 pza", cat: "Verduras", m: { kcal: 180, p: 4, c: 41, f: 0 } },
+  pan: { item: "Pan integral", qty: "2 reb", cat: "Cereales y granos", m: { kcal: 160, p: 8, c: 28, f: 2 } },
+};
+const VEG: Record<string, Comp> = {
+  brocoli: { item: "Brócoli", qty: "1 taza", cat: "Verduras", m: { kcal: 35, p: 3, c: 6, f: 0 } },
+  zanahoria: { item: "Zanahoria", qty: "1 pza", cat: "Verduras", m: { kcal: 30, p: 1, c: 7, f: 0 } },
+  pimiento: { item: "Pimiento", qty: "1 pza", cat: "Verduras", m: { kcal: 30, p: 1, c: 6, f: 0 } },
+  ensalada: { item: "Lechuga y pepino", qty: "2 tazas", cat: "Verduras", m: { kcal: 25, p: 2, c: 5, f: 0 } },
+  ejote: { item: "Ejote", qty: "1 taza", cat: "Verduras", m: { kcal: 35, p: 2, c: 7, f: 0 } },
+};
+const FRUIT: Record<string, Comp> = {
+  platano: { item: "Plátano", qty: "1 pza", cat: "Frutas", m: { kcal: 105, p: 1, c: 27, f: 0 } },
+  fresa: { item: "Fresa", qty: "1 taza", cat: "Frutas", m: { kcal: 50, p: 1, c: 12, f: 0 } },
+  manzana: { item: "Manzana", qty: "1 pza", cat: "Frutas", m: { kcal: 95, p: 0, c: 25, f: 0 } },
+  pina: { item: "Piña", qty: "½ taza", cat: "Frutas", m: { kcal: 40, p: 0, c: 11, f: 0 } },
+  mango: { item: "Mango", qty: "½ taza", cat: "Frutas", m: { kcal: 50, p: 1, c: 12, f: 0 } },
+};
+const NAME: Record<string, string> = { pollo: "pollo", res: "res", atun: "atún", huevo: "huevo", panela: "panela", frijol: "frijol", requeson: "requesón", arroz: "arroz", pasta: "pasta", tortilla: "tortilla", papa: "papa", camote: "camote", pan: "pan integral", brocoli: "brócoli", zanahoria: "zanahoria", pimiento: "pimiento", ensalada: "ensalada", ejote: "ejote" };
+function cap1(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function sumM(parts: Comp[], extraKcal = 0, extraF = 0): Macros { return parts.reduce((a, p) => ({ kcal: a.kcal + p.m.kcal, p: a.p + p.m.p, c: a.c + p.m.c, f: a.f + p.m.f }), { kcal: extraKcal, p: 0, c: 0, f: extraF }); }
+function gAdd(r: Recipe, m: Macros) { RECIPES.push(r); MACROS[r.id] = m; }
+
+(function generateBank() {
+  let n = 0;
+  const oil: Comp = { item: "Aceite de oliva", qty: "1 cda", cat: "Despensa", m: { kcal: 90, p: 0, c: 0, f: 10 } };
+  // COMIDAS: proteína + carbohidrato + verdura
+  const comProt = ["pollo", "res", "atun", "panela", "huevo"], comCarb = ["arroz", "pasta", "tortilla", "papa", "camote", "pan"], comVeg = ["brocoli", "zanahoria", "pimiento", "ensalada", "ejote"];
+  comProt.forEach((pk, i) => comCarb.forEach((ck, j) => {
+    const vk = comVeg[(i + j) % comVeg.length];
+    const parts = [PROT[pk], CARB[ck], VEG[vk]];
+    gAdd({ id: "g-c" + (++n), meal: "comida", name: cap1(NAME[pk]) + " con " + NAME[ck] + " y " + NAME[vk], protein: "~" + sumM(parts).p + " g",
+      ingredients: parts.map((x) => ({ item: x.item, qty: x.qty, cat: x.cat })), prep: "Cocina la proteína a tu gusto, acompaña con " + NAME[ck] + " y " + NAME[vk] + " al vapor. Sazona simple. Ideal para preparar por lotes.", tags: ["mealprep"], avoidsTomato: true }, sumM(parts, 90, 10));
+  }));
+  // CENAS ligeras: proteína + verdura + (tortilla o pan)
+  const cenProt = ["pollo", "atun", "panela", "huevo", "frijol", "requeson"], cenBase = ["tortilla", "pan"], cenVeg = ["ensalada", "pimiento", "zanahoria", "brocoli"];
+  cenProt.forEach((pk, i) => cenBase.forEach((bk, j) => {
+    const vk = cenVeg[(i + j) % cenVeg.length];
+    const parts = [PROT[pk], CARB[bk], VEG[vk]];
+    gAdd({ id: "g-n" + (++n), meal: "cena", name: "Cena de " + NAME[pk] + " con " + NAME[vk], protein: "~" + sumM(parts).p + " g",
+      ingredients: parts.map((x) => ({ item: x.item, qty: x.qty, cat: x.cat })), prep: "Arma una cena ligera con " + NAME[pk] + ", " + NAME[vk] + " y " + NAME[bk] + ". Rápida y baja en grasa.", tags: ["rapida"], avoidsTomato: true }, sumM(parts, 30, 3));
+  }));
+  // DESAYUNOS: overnight oats con fruta + smoothies con fruta + huevo
+  Object.keys(FRUIT).forEach((fk) => {
+    const oatsP = [{ item: "Avena cruda", qty: "½ taza", cat: "Cereales y granos" as GroceryCat, m: { kcal: 150, p: 5, c: 27, f: 3 } }, { item: "Yogurt griego doble cero", qty: "½ taza", cat: "Lácteos" as GroceryCat, m: { kcal: 70, p: 12, c: 5, f: 0 } }, { item: "Leche light", qty: "½ taza", cat: "Lácteos" as GroceryCat, m: { kcal: 50, p: 4, c: 6, f: 1 } }, FRUIT[fk], { item: "Chía", qty: "1 cda", cat: "Despensa" as GroceryCat, m: { kcal: 60, p: 2, c: 5, f: 4 } }];
+    gAdd({ id: "g-d" + (++n), meal: "desayuno", name: "Overnight oats de " + NAME[fk], protein: "~" + sumM(oatsP).p + " g", ingredients: oatsP.map((x) => ({ item: x.item, qty: x.qty, cat: x.cat })), prep: "La noche anterior mezcla avena, yogurt, leche y chía; agrega " + NAME[fk] + ". Refrigera.", tags: ["overnight"], avoidsTomato: true }, sumM(oatsP));
+    const smP = [FRUIT[fk], { item: "Leche light", qty: "1 taza", cat: "Lácteos" as GroceryCat, m: { kcal: 100, p: 8, c: 12, f: 2 } }, { item: "Yogurt griego doble cero", qty: "½ taza", cat: "Lácteos" as GroceryCat, m: { kcal: 70, p: 12, c: 5, f: 0 } }, { item: "Avena cruda", qty: "1 cda", cat: "Cereales y granos" as GroceryCat, m: { kcal: 40, p: 1, c: 7, f: 1 } }];
+    gAdd({ id: "g-s" + (++n), meal: "desayuno", name: "Smoothie de " + NAME[fk], protein: "~" + sumM(smP).p + " g", ingredients: smP.map((x) => ({ item: x.item, qty: x.qty, cat: x.cat })), prep: "Licúa todo con hielo hasta quedar cremoso.", tags: ["smoothie"], avoidsTomato: true }, sumM(smP));
+  });
+  ["pollo", "panela", "frijol"].forEach((pk) => {
+    const parts = [PROT[pk], CARB.tortilla, VEG.pimiento];
+    gAdd({ id: "g-d" + (++n), meal: "desayuno", name: "Desayuno de " + NAME[pk] + " con tortilla", protein: "~" + sumM(parts).p + " g", ingredients: parts.map((x) => ({ item: x.item, qty: x.qty, cat: x.cat })), prep: "Calienta la proteína, arma tacos con tortilla y pimiento.", avoidsTomato: true }, sumM(parts, 20, 2));
+  });
+  // COLACIONES
+  const colas: [string, Comp[]][] = [
+    ["Manzana con cacahuate", [FRUIT.manzana, { item: "Crema de cacahuate", qty: "1 cda", cat: "Despensa", m: { kcal: 95, p: 4, c: 3, f: 8 } }]],
+    ["Yogurt con fresa", [{ item: "Yogurt griego doble cero", qty: "¾ taza", cat: "Lácteos", m: { kcal: 110, p: 18, c: 7, f: 0 } }, FRUIT.fresa]],
+    ["Plátano con almendras", [FRUIT.platano, { item: "Almendras", qty: "10 pzas", cat: "Despensa", m: { kcal: 70, p: 3, c: 2, f: 6 } }]],
+    ["Bastones de zanahoria", [VEG.zanahoria]],
+    ["Pepino con limón", [{ item: "Pepino", qty: "1 pza", cat: "Verduras", m: { kcal: 20, p: 1, c: 4, f: 0 } }]],
+    ["Cottage con piña", [{ item: "Queso cottage", qty: "½ taza", cat: "Lácteos", m: { kcal: 100, p: 12, c: 5, f: 3 } }, FRUIT.pina]],
+    ["Huevo cocido", [{ item: "Huevo", qty: "2 pzas", cat: "Proteínas", m: { kcal: 140, p: 12, c: 1, f: 10 } }]],
+    ["Mango con yogurt", [FRUIT.mango, { item: "Yogurt griego doble cero", qty: "½ taza", cat: "Lácteos", m: { kcal: 70, p: 12, c: 5, f: 0 } }]],
+  ];
+  colas.forEach(([nm, parts]) => gAdd({ id: "g-x" + (++n), meal: "colacion", name: nm, protein: "~" + sumM(parts).p + " g", ingredients: parts.map((x) => ({ item: x.item, qty: x.qty, cat: x.cat })), prep: "Porción lista para llevar.", tags: ["rapida"], avoidsTomato: true }, sumM(parts)));
+})();

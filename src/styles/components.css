@@ -246,3 +246,19 @@
 .dc-edit{display:flex;gap:6px;margin-top:8px}
 .dc-edit button{flex:1;border:1px solid var(--hair);background:transparent;color:var(--ink-2);border-radius:7px;padding:5px 4px;font-size:11px;cursor:pointer;font-family:var(--font-ui)}
 .dc-edit button:hover{border-color:var(--ink-1);color:var(--ink-1)}
+
+/* ---- Alertas discretas (override): recordatorio elegante, no error ---- */
+.alert{border:1px solid var(--hair);background:var(--bg-soft);color:var(--ink-2);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.4;margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.alert::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ink-4);flex:none}
+.alert.urgent{border-color:var(--warn);color:var(--warn);background:var(--warn-dim)}
+.alert.urgent::before{background:var(--warn)}
+
+/* ---- MealPrep: acciones agrupadas por comida ---- */
+.dv-rname{font-size:13.5px;color:var(--ink-1);font-weight:500;text-align:right}
+.dv-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.dv-acts button{flex:1 1 auto;border:1px solid var(--hair);background:transparent;color:var(--ink-2);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;font-family:var(--font-ui);transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
+.dv-acts button:hover{border-color:var(--ink-1);color:var(--ink-1)}
+.dv-acts button.tgl.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* ---- Chooser de comida ---- */
+.ch-item{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--hair);background:transparent;color:var(--ink-1);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-family:var(--font-ui);font-size:14px;text-align:left;transition:border-color .15s var(--ease)}
+.ch-item:hover{border-color:var(--ink-1)}

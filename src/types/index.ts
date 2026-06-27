@@ -87,4 +87,6 @@ export interface AppState {
   review?: Record<string, boolean>;  // claveSemana::item -> hecho
   finPins?: string[];   // accesos de Finanzas fijados
   finHidden?: string[]; // accesos de Finanzas ocultos
+  finOrder?: string[];  // orden personalizado de accesos
+  mealState?: Record<string, { prep?: boolean; cons?: boolean }>; // semana-día-slot
 }
