@@ -117,3 +117,8 @@
   .side .newbtn:hover{background:var(--nav-accent);opacity:.9;color:#fff}
   .topbar,.nav,.fab-float{display:none}
 }
+
+/* ---- Logo de marca ---- */
+.logo-mark{width:24px;height:24px;vertical-align:-6px;margin-right:4px}
+.brandwrap{display:flex;align-items:center;gap:8px}
+.brand-mark{width:22px;height:22px;display:block}

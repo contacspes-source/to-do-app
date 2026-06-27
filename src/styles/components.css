@@ -283,3 +283,17 @@
 .ev-grade{width:78px;text-align:center}
 .ev-add{display:flex;gap:8px;margin-top:10px;align-items:center}
 .ev-add .ev-addbtn{width:auto;flex:none;padding:10px 14px}
+
+/* ---- HOY: centro de mando (Momentum + tarjetas) ---- */
+.momentum{display:flex;align-items:center;gap:16px;margin:16px 0 4px}
+.momentum .mo-ring{flex:none}
+.momentum .mo-h{font-weight:600;font-size:17px;letter-spacing:-.01em}
+.today-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.tcard{text-align:left;background:var(--bg-soft);border:1px solid var(--hair);border-radius:var(--r-card);padding:14px;cursor:pointer;font-family:var(--font-ui);transition:border-color .2s var(--ease),transform .1s var(--ease)}
+.tcard:hover{border-color:var(--hair-2)}.tcard:active{transform:scale(.98)}
+.tcard .tc-h{font-size:10.5px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tcard .tc-big{font-family:var(--font-mono);font-weight:600;font-size:20px;margin-top:6px;letter-spacing:-.01em}
+.tcard .tc-big2{font-weight:600;font-size:15px;margin-top:6px;line-height:1.25}
+.tcard .tc-sub{font-size:11px;color:var(--ink-3)}
+.tcard .tc-line{font-size:11.5px;color:var(--ink-2);margin-top:6px}
+@media(min-width:560px){.today-cards{grid-template-columns:1fr 1fr 1fr}}
