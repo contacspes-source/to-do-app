@@ -2,7 +2,7 @@
  * finance/calc.ts — agregados financieros: totales, promedios, proyección y alertas.
  */
 import { DB } from "../database/store";
-import { cardPay, cardPayType } from "./cards";
+
 import { money } from "../utils/format";
 
 export function sum(a: number[]): number { return a.reduce((s, x) => s + x, 0); }
@@ -51,7 +51,6 @@ export interface Alert { text: string; urgent: boolean; }
 export function computeAlerts(): Alert[] {
   const A: Alert[] = [], today = new Date();
   DB.cards.forEach((c) => { if (c.active === false) return; const u = c.limit ? (c.balance || 0) / c.limit : 0; if (u > 0.7) A.push({ text: c.name + " supera 70% de uso (" + Math.round(u * 100) + "%)", urgent: false }); });
-  DB.cards.forEach((c) => { if (c.active === false) return; const mn = +(c.min || 0); if (cardPayType(c) === "custom" && mn > 0 && cardPay(c) < mn) A.push({ text: "Pago de " + c.name + " menor al mínimo (" + money(mn) + ")", urgent: true }); });
   DB.cards.forEach((c) => { if (c.active === false || !((c.balance || 0) > 0) || !c.pay) return; const d = nextDateForDay(+c.pay), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push({ text: "Pago de " + c.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : "")), urgent: days <= 2 }); });
   (DB.subs || []).forEach((s) => { if (s.active === false || !s.day) return; const d = nextDateForDay(+s.day), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push({ text: "Cobro de " + s.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : "")), urgent: days <= 1 }); });
   const cm = today.getMonth(), cy = today.getFullYear(), curCat: Record<string, number> = {}, prevCat: Record<string, Record<string, number>> = {};

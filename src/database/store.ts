@@ -62,6 +62,14 @@ function migrate() {
   DB.finHidden = DB.finHidden || [];
   DB.finOrder = DB.finOrder || [];
   DB.mealState = DB.mealState || {};
+  if (!DB.supplements) DB.supplements = [
+    { id: 1, name: "Creatina", brand: "Birdman", dose: "5 g", time: "Cualquier hora", days: "Diario", stock: 0, reminder: true, notes: "" },
+    { id: 2, name: "Proteína Whey", brand: "", dose: "1 scoop", time: "Mañana / post-entreno", days: "Diario", stock: 0, reminder: false, notes: "" },
+    { id: 3, name: "Omega-3", brand: "", dose: "1 cápsula", time: "Con una comida", days: "Diario", stock: 0, reminder: false, notes: "" },
+    { id: 4, name: "Magnesio", brand: "", dose: "1 cápsula", time: "Noche", days: "Diario", stock: 0, reminder: true, notes: "" },
+  ];
+  DB.supplementSeq = DB.supplementSeq || (DB.supplements.reduce((m, x) => Math.max(m, x.id), 0) + 1);
+  DB.supplementLog = DB.supplementLog || {};
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }

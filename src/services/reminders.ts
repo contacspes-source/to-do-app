@@ -5,6 +5,7 @@
  * (Notificaciones en segundo plano requerirían push + service worker, a futuro.)
  */
 import { DB } from "../database/store";
+import { isoDay } from "./tracking";
 
 const DAYNAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 function hm(d = new Date()) { return d.getHours() * 60 + d.getMinutes(); }
@@ -18,6 +19,8 @@ export function dueBanners(): string[] {
     const t = toMin((r as any)[k]); if (t != null && now >= t && now <= t + 90) out.push("Es hora de " + label);
   });
   if (r.groceryDay != null && new Date().getDay() === r.groceryDay) out.push("Hoy (" + DAYNAMES[r.groceryDay] + ") es tu día de súper. Revisa la lista.");
+  const day = isoDay(); const log = DB.supplementLog || {};
+  (DB.supplements || []).forEach((sp) => { if (sp.reminder && !log[day + "-" + sp.id]) out.push("Toma tu " + sp.name); });
   return out;
 }
 

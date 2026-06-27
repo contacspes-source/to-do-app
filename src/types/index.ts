@@ -89,4 +89,11 @@ export interface AppState {
   finHidden?: string[]; // accesos de Finanzas ocultos
   finOrder?: string[];  // orden personalizado de accesos
   mealState?: Record<string, { prep?: boolean; cons?: boolean }>; // semana-día-slot
+  supplements?: Supplement[]; supplementSeq?: number;
+  supplementLog?: Record<string, boolean>; // dateISO-suppId -> tomado
+}
+
+export interface Supplement {
+  id: number; name: string; brand?: string; dose?: string; time?: string;
+  days?: string; stock?: number; reminder?: boolean; notes?: string;
 }

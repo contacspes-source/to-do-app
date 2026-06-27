@@ -11,7 +11,7 @@ import {
   sum, acctById, totalDebt, totalDebito, monthTx, applyTx, nextDateForDay,
   monthlyIncome, monthlyGasto, monthlySubs, monthsSpanAll, computeAlerts,
 } from "../finance/calc";
-import { cardBg, cardPay, cardPayType, cardById, paySim } from "../finance/cards";
+import { cardBg, cardById } from "../finance/cards";
 import { openCard, openPay, openAcct, openTx, openSub, openGoal } from "../components/modals";
 import { icon } from "../components/icons";
 
@@ -270,11 +270,10 @@ function cardsOrdered() {
 /* ---------- Tarjeta de crédito (estilo banca) ---------- */
 function creditCardHtml(c: any): string {
   const u = c.limit ? Math.round((c.balance || 0) / c.limit * 100) : 0; const avail = (c.limit || 0) - (c.balance || 0);
-  const pl = cardPay(c); const ptype = cardPayType(c); const sim = paySim(c.balance || 0, c.apr || 0, pl);
   const bg = cardBg(c); const clogo = c.bank ? esc(c.bank.charAt(0).toUpperCase()) : "$"; const cl4 = c.last4 ? "•••• " + esc(c.last4) : "•••• ••••";
   const dueD = c.pay ? nextDateForDay(+c.pay) : null; const dueTxt = dueD ? dueD.toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "—"; const days = dueD ? Math.round((+dueD - +new Date()) / 864e5) : null;
   const minP = +(c.min || 0); const prog = +(c.planned || 0);
-  const flags: string[] = []; if (days != null && days >= 0 && days <= 5 && (c.balance || 0) > 0) flags.push(days === 0 ? "Pago hoy" : "Pago en " + days + "d"); if (u >= 70) flags.push("Uso alto " + u + "%"); if (minP > 0 && ptype === "custom" && pl < minP) flags.push("Pago menor al mínimo");
+  const flags: string[] = []; if (days != null && days >= 0 && days <= 5 && (c.balance || 0) > 0) flags.push(days === 0 ? "Pago hoy" : "Pago en " + days + "d"); if (u >= 70) flags.push("Uso alto " + u + "%");
   return '<div class="card-cc bankc"' + (c.active === false ? ' style="opacity:.55"' : '') + '>' +
     '<div class="cardface" style="background:' + bg + '"><div class="cf-top"><div><div class="cf-bank">' + esc(c.bank || c.name) + '</div><div class="cf-alias">' + esc(c.alias || c.name) + '</div></div><div class="cf-logo">' + clogo + '</div></div><div><div class="cf-num">' + cl4 + '</div><div class="cf-util">uso ' + u + '%' + (c.active === false ? ' · inactiva' : '') + '</div></div></div>' +
     (flags.length ? '<div class="cflags">' + flags.map((f) => '<span class="cflag">⚠ ' + f + '</span>').join('') + '</div>' : '') +
@@ -285,9 +284,9 @@ function creditCardHtml(c: any): string {
     // pago del mes (unificado)
     '<div class="paybox"><div class="pb-h">Pago del mes</div>' +
     '<div class="pb-row"><span>Pago mínimo</span><b>' + money(minP) + '</b></div>' +
-    '<div class="pb-row"><span>Pago programado</span><b>' + (prog > 0 ? money(prog) : "—") + '</b></div>' +
-    '<div class="pb-row pb-app"><span>Aplicado este mes</span><b>' + money(pl) + ' <span class="tag">' + (ptype === "custom" ? "programado" : "mínimo") + '</span></b></div>' +
-    ((pl > 0 && (c.balance || 0) > 0) ? '<div class="note" style="margin-top:6px">' + (sim.ok ? 'Liquidarías en ' + sim.m + ' meses' : 'No cubre intereses') + '</div>' : '') + '</div>' +
+    '<div class="pb-row"><span>Sin intereses</span><b>' + (prog > 0 ? money(prog) : "—") + '</b></div>' +
+    '<div class="pb-row"><span>Se generan</span><b>' + (c.cut ? "día " + c.cut + " (corte)" : "—") + '</b></div>' +
+    '</div>' +
     // secundaria
     '<div class="cinfo">' +
     '<div><div class="k">Corte</div><div class="vv">' + (c.cut ? "día " + c.cut : "—") + '</div></div>' +

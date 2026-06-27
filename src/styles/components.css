@@ -262,3 +262,15 @@
 /* ---- Chooser de comida ---- */
 .ch-item{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--hair);background:transparent;color:var(--ink-1);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-family:var(--font-ui);font-size:14px;text-align:left;transition:border-color .15s var(--ease)}
 .ch-item:hover{border-color:var(--ink-1)}
+
+/* ---- Bloque funcional (contenedor de una función) ---- */
+.block{border:1px solid var(--hair);border-radius:var(--r-card);background:var(--bg-soft);padding:16px;margin-top:16px}
+.block-h{font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-4);margin-bottom:12px}
+.block .field:last-of-type{margin-bottom:12px}
+
+/* ---- Suplementos: badges de evidencia ---- */
+.evi{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:999px;border:1px solid var(--hair-2);color:var(--ink-3);white-space:nowrap}
+.evi-sólida{color:#2f7a4d;border-color:#2f7a4d}
+.evi-moderada{color:var(--ink-2)}
+.evi-limitada{color:var(--warn);border-color:var(--warn)}
+.ccact button.tgl.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}

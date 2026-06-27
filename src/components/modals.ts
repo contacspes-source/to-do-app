@@ -9,6 +9,7 @@ import { esc, money } from "../utils/format";
 import { CATEGORIES } from "../config/app";
 import { CARDCOLORS, CARDGRADS, CARDTPL, cardById, cardPayType } from "../finance/cards";
 import { recipeById, recipeInfo, recipeMacros } from "../database/recipes";
+import type { Supplement } from "../types";
 import { applyTx } from "../finance/calc";
 import { renderDinero } from "../pages/dinero";
 
@@ -57,21 +58,18 @@ export function openCard(id?: any) {
 }
 
 /* ============ Pago del mes (mínimo + programado unificados) ============ */
-let payCardId: any = null, paySel: "min" | "custom" = "min";
+let payCardId: any = null;
 function updatePayModalHint() {
   const min = +$<HTMLInputElement>("pay-min").value || 0, prog = +$<HTMLInputElement>("pay-prog").value || 0;
-  const applied = paySel === "custom" ? prog : min; const diff = applied - min;
   const h = $("pay-hint"); if (!h) return;
-  h.innerHTML = "Se aplica este mes: <b>" + money(applied) + "</b> (" + (paySel === "custom" ? "programado" : "mínimo") + ")" + (min > 0 ? " · diferencia vs mínimo " + (diff >= 0 ? "+" : "") + money(diff) : "") + (paySel === "custom" && min > 0 && prog < min ? ' · <span style="color:var(--warn)">⚠ menor al mínimo</span>' : "");
+  h.innerHTML = "Ambos montos se generan en tu fecha de corte. Mínimo " + money(min) + " · Sin intereses " + money(prog) + ".";
 }
 export function openPay(id: any) {
   const c = cardById(id); if (!c) return; payCardId = id;
   $("payTitle").textContent = "Pago del mes · " + c.name;
-  $("pay-info").textContent = "Saldo " + money(c.balance || 0) + " · edita el mínimo y el programado; aplica solo a este mes.";
-  paySel = cardPayType(c);
+  $("pay-info").textContent = "Registra el pago mínimo y el pago para no generar intereses.";
   $<HTMLInputElement>("pay-min").value = String(c.min || "");
   $<HTMLInputElement>("pay-prog").value = String(c.planned || "");
-  resetPills("pay-which", paySel);
   updatePayModalHint(); openModal("payModal");
 }
 
@@ -159,6 +157,20 @@ export function openRecipe(id: string) {
   openModal("recipeModal");
 }
 
+/* ============ Suplemento ============ */
+let suppEdit: number | null = null, suppRem = 1, suppDone: (() => void) | null = null;
+export function openSupp(id?: any, onDone?: () => void) {
+  suppDone = onDone || null;
+  const sp = id ? (DB.supplements || []).find((x) => x.id == id) : null; suppEdit = sp ? sp.id : null;
+  $("sp-title").textContent = sp ? "Editar suplemento" : "Nuevo suplemento";
+  $<HTMLInputElement>("sp-name").value = sp ? sp.name : ""; $<HTMLInputElement>("sp-brand").value = sp && sp.brand ? sp.brand : "";
+  $<HTMLInputElement>("sp-dose").value = sp && sp.dose ? sp.dose : ""; $<HTMLInputElement>("sp-time").value = sp && sp.time ? sp.time : "";
+  $<HTMLInputElement>("sp-days").value = sp && sp.days ? sp.days : "Diario"; $<HTMLInputElement>("sp-stock").value = sp && sp.stock ? String(sp.stock) : "";
+  $<HTMLTextAreaElement>("sp-notes").value = sp && sp.notes ? sp.notes : "";
+  suppRem = sp ? (sp.reminder ? 1 : 0) : 1; resetPills("sp-rem", String(suppRem));
+  openModal("suppModal");
+}
+
 /* ============ Wiring de botones estáticos ============ */
 export function initModals() {
   // tarjeta
@@ -178,15 +190,13 @@ export function initModals() {
     save(); closeModal("cardModal"); renderDinero("tarjetas");
   };
 
-  // pago del mes
-  pillGroup($("pay-which"), (v) => { paySel = v as any; updatePayModalHint(); });
+  // pago del mes (mínimo + sin intereses; ambos se generan en la fecha de corte)
   ["pay-min", "pay-prog"].forEach((id) => $(id)?.addEventListener("input", updatePayModalHint));
   $("pay-cancel").onclick = () => closeModal("payModal");
   $("pay-save").onclick = () => {
     const c = cardById(payCardId); if (!c) return;
     c.min = +$<HTMLInputElement>("pay-min").value || 0;
     c.planned = +$<HTMLInputElement>("pay-prog").value || 0;
-    c.payType = paySel;
     save(); closeModal("payModal"); renderDinero("tarjetas");
   };
 
@@ -217,6 +227,15 @@ export function initModals() {
   // compra de súper -> Finanzas
   pillGroup($("buy-method"), (v) => { buyMethod = v; updateBuyMethodUI(); });
   $("rc-close").onclick = () => closeModal("recipeModal");
+  // suplemento
+  pillGroup($("sp-rem"), (v) => (suppRem = +v));
+  $("sp-cancel").onclick = () => closeModal("suppModal");
+  $("sp-save").onclick = () => {
+    const n = $<HTMLInputElement>("sp-name").value.trim(); if (!n) { $("sp-name").focus(); return; }
+    const obj: Supplement = { id: suppEdit || DB.supplementSeq!++, name: n, brand: $<HTMLInputElement>("sp-brand").value.trim(), dose: $<HTMLInputElement>("sp-dose").value.trim(), time: $<HTMLInputElement>("sp-time").value.trim(), days: $<HTMLInputElement>("sp-days").value.trim(), stock: +$<HTMLInputElement>("sp-stock").value || 0, reminder: suppRem === 1, notes: $<HTMLTextAreaElement>("sp-notes").value.trim() };
+    if (suppEdit) Object.assign((DB.supplements || []).find((x) => x.id === suppEdit)!, obj); else (DB.supplements = DB.supplements || []).push(obj);
+    save(); closeModal("suppModal"); if (suppDone) suppDone();
+  };
   $("buy-skip").onclick = () => { closeModal("buyModal"); if (buyDone) buyDone(); };
   $("buy-save").onclick = () => {
     const a = +$<HTMLInputElement>("buy-amt").value; if (!a || a <= 0) { $("buy-amt").focus(); return; }
@@ -226,5 +245,5 @@ export function initModals() {
   };
 
   // cerrar al tocar el fondo
-  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal", "chooseModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
+  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal", "chooseModal", "suppModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
 }

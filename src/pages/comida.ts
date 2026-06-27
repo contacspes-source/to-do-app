@@ -9,11 +9,12 @@ import { $, qsa, pillGroup, openModal, closeModal } from "../utils/dom";
 import { esc } from "../utils/format";
 import { RECIPES, recipesByMeal, MEAL_LABELS, recipeMacros, GROCERY_ORDER, type MealSlot } from "../database/recipes";
 import { getPlan, generatePlan, setPlanSlot, recipesForDay, groceryList, nutritionTargets, WEEK_DAYS, weekKey } from "../services/mealplan";
-import { openBuyGrocery, openRecipe } from "../components/modals";
+import { openBuyGrocery, openRecipe, openSupp } from "../components/modals";
 import { useSegment } from "../hooks/useSegment";
 import * as T from "../services/tracking";
 import * as P from "../services/pantry";
 import { lineChart, progressBar } from "../components/charts";
+import { SUPP_SUGGESTIONS } from "../database/supplements";
 
 let comidaSeg = "plan";
 const SLOTS: MealSlot[] = ["desayuno", "colacion", "comida", "cena"];
@@ -121,9 +122,45 @@ export function renderComida(seg = comidaSeg) {
 
   } else if (seg === "refri") {
     renderRefri(w);
+  } else if (seg === "suplementos") {
+    renderSuplementos(w);
   } else if (seg === "perfil") {
     renderPerfil(w);
   }
+}
+
+function renderSuplementos(w: HTMLElement) {
+  const day = T.isoDay();
+  let h = '<div class="note" style="margin-top:0">Gestiona tus suplementos: dosis, horario, existencia y recordatorio. Marca lo que tomes hoy.</div>';
+  h += '<button class="btn btn-primary" id="sp-add">+ Agregar suplemento</button>';
+  (DB.supplements || []).forEach((sp) => {
+    const taken = (DB.supplementLog || {})[day + "-" + sp.id];
+    const meta = [sp.dose, sp.time, sp.days].filter(Boolean).join(" · ");
+    h += '<div class="card-cc"><div style="display:flex;justify-content:space-between;align-items:start;gap:10px"><div><div class="cn">' + esc(sp.name) + (sp.brand ? ' <span class="ld">' + esc(sp.brand) + '</span>' : '') + '</div><div class="cnum">' + esc(meta || "—") + '</div></div><div class="money">' + (sp.stock ? sp.stock + " dosis" : "sin stock") + '</div></div>' +
+      (sp.notes ? '<div class="note" style="margin-top:8px">' + esc(sp.notes) + '</div>' : '') +
+      '<div class="ccact"><button class="tgl' + (taken ? " on" : "") + '" data-sptake="' + sp.id + '">' + (taken ? "Tomado hoy ✓" : "Tomado hoy") + '</button><button data-spedit="' + sp.id + '">Editar</button><button data-spdel="' + sp.id + '">Eliminar</button></div></div>';
+  });
+  if (!(DB.supplements || []).length) h += '<div class="note">Aún no tienes suplementos. Agrega uno.</div>';
+  // Recomendaciones
+  h += '<div class="sect">Sugerencias (opcionales)</div>';
+  h += '<div class="note" style="margin-top:0">Basadas en evidencia y en tu perfil. Son opcionales, no parte obligatoria del plan.</div>';
+  SUPP_SUGGESTIONS.forEach((g) => {
+    h += '<div class="card-pad"><div class="top" style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b style="font-weight:600">' + esc(g.name) + '</b><span class="evi evi-' + g.evidence + '">evidencia ' + g.evidence + '</span></div>' +
+      '<div class="note" style="margin-top:6px">' + esc(g.why) + '</div>' +
+      (g.tdah ? '<div class="note" style="margin-top:4px;color:var(--ink-2)"><b>Potencialmente útil en TDAH</b> (evidencia limitada). No es un tratamiento del TDAH.</div>' : '') + '</div>';
+  });
+  h += '<div class="note">Información orientativa, no es indicación médica. Coméntalo con tu médico o psiquiatra antes de iniciar cualquier suplemento.</div>';
+  w.innerHTML = h;
+  $("sp-add").onclick = () => openSupp(undefined, () => renderComida("suplementos"));
+  qsa<HTMLElement>("[data-spedit]", w).forEach((b) => (b.onclick = () => openSupp(b.dataset.spedit, () => renderComida("suplementos"))));
+  qsa<HTMLElement>("[data-spdel]", w).forEach((b) => (b.onclick = () => { if (confirm("¿Eliminar este suplemento?")) { DB.supplements = (DB.supplements || []).filter((x) => x.id != (b.dataset.spdel as any)); save(); renderComida("suplementos"); } }));
+  qsa<HTMLElement>("[data-sptake]", w).forEach((b) => (b.onclick = () => {
+    const id = +b.dataset.sptake!; const k = day + "-" + id; DB.supplementLog = DB.supplementLog || {};
+    const sp = (DB.supplements || []).find((x) => x.id === id);
+    if (!DB.supplementLog[k]) { DB.supplementLog[k] = true; if (sp && (sp.stock || 0) > 0) sp.stock = (sp.stock || 0) - 1; }
+    else { delete DB.supplementLog[k]; if (sp) sp.stock = (sp.stock || 0) + 1; }
+    save(); renderComida("suplementos");
+  }));
 }
 
 function renderRefri(w: HTMLElement) {
@@ -166,16 +203,18 @@ function blockFisico(b: HTMLElement) {
   const p = DB.foodProfile!; const t = nutritionTargets(p); const cur = T.latestWeight(); const tw = T.todayWeight();
   let h = '<div class="stat-row"><div class="stat"><div class="n">' + cur + '</div><div class="l">Peso (kg)</div></div><div class="stat"><div class="n">' + T.imc(cur) + '</div><div class="l">IMC</div></div><div class="stat"><div class="n">' + (p.targetWeight || cur) + '</div><div class="l">Objetivo</div></div></div>';
   h += '<div class="stat-row" style="margin-top:10px"><div class="stat"><div class="n">' + t.kcal + '</div><div class="l">kcal/día</div></div><div class="stat"><div class="n">' + t.protein + 'g</div><div class="l">Proteína</div></div><div class="stat"><div class="n">' + p.waterTargetL + 'L</div><div class="l">Agua/día</div></div></div>';
-  h += '<div class="sect">Registrar hoy</div>';
-  h += '<div class="field row2"><div><span class="label">Peso de hoy (kg)</span><input class="input mono" id="tk-weight" type="number" step="0.1" value="' + (tw ? tw.kg : "") + '" placeholder="' + cur + '"></div><div><span class="label">Agua de hoy (L)</span><input class="input mono" id="tk-water" type="number" step="0.25" value="' + (DB.waterLog?.[T.isoDay()] ?? "") + '"></div></div>';
-  h += '<button class="btn btn-ghost" id="tk-save-day">Guardar registro de hoy</button>';
-  h += '<div style="height:10px"></div><div class="pills"><button class="pill' + (DB.planLog?.[T.isoDay()] ? " sel" : "") + '" id="tk-plan">Seguí el plan</button><button class="pill' + (DB.mealsLog?.[T.isoDay()] ? " sel" : "") + '" id="tk-meals">Registré comidas</button></div>';
-  h += '<div class="sect">Datos físicos</div>';
+  // ---- Bloque: Registro diario ----
+  h += '<div class="block"><div class="block-h">Registro diario</div>';
+  h += '<div class="field row2" style="margin-bottom:10px"><div><span class="label">Peso de hoy (kg)</span><input class="input mono" id="tk-weight" type="number" step="0.1" value="' + (tw ? tw.kg : "") + '" placeholder="' + cur + '"></div><div><span class="label">Agua de hoy (L)</span><input class="input mono" id="tk-water" type="number" step="0.25" value="' + (DB.waterLog?.[T.isoDay()] ?? "") + '"></div></div>';
+  h += '<button class="btn btn-ghost" id="tk-save-day">Guardar registro</button>';
+  h += '<div style="height:10px"></div><div class="pills"><button class="pill' + (DB.planLog?.[T.isoDay()] ? " sel" : "") + '" id="tk-plan">Seguí el plan</button><button class="pill' + (DB.mealsLog?.[T.isoDay()] ? " sel" : "") + '" id="tk-meals">Registré comidas</button></div></div>';
+  // ---- Bloque: Datos físicos ----
+  h += '<div class="block"><div class="block-h">Datos físicos</div>';
   h += '<div class="field row2"><div><span class="label">Estatura (cm)</span><input class="input mono" id="fp-h" type="number" value="' + p.height + '"></div><div><span class="label">Peso objetivo (kg)</span><input class="input mono" id="fp-tw" type="number" value="' + (p.targetWeight || "") + '"></div></div>';
   h += '<div class="field"><span class="label">Objetivo</span><div class="pills" id="fp-goal">' + [["recomp", "Recomposición"], ["muscle", "Músculo"], ["deficit", "Déficit"], ["maintain", "Mantener"]].map(([v, l]) => '<button class="pill' + (p.goal === v ? " sel" : "") + '" data-v="' + v + '">' + l + '</button>').join("") + '</div></div>';
-  h += '<div class="field"><span class="label">Actividad física</span><div class="pills" id="fp-act">' + [["none", "Ninguna"], ["light", "Ligera"], ["moderate", "Moderada"], ["high", "Alta"]].map(([v, l]) => '<button class="pill' + (p.activity === v ? " sel" : "") + '" data-v="' + v + '">' + l + '</button>').join("") + '</div></div>';
+  h += '<div class="field"><span class="label">Nivel de actividad</span><div class="pills" id="fp-act">' + [["none", "Ninguna"], ["light", "Ligera"], ["moderate", "Moderada"], ["high", "Alta"]].map(([v, l]) => '<button class="pill' + (p.activity === v ? " sel" : "") + '" data-v="' + v + '">' + l + '</button>').join("") + '</div></div>';
   h += '<div class="field"><span class="label">Meta de agua (L/día)</span><input class="input mono" id="fp-water" type="number" step="0.5" value="' + p.waterTargetL + '"></div>';
-  h += '<button class="btn btn-primary" id="fp-save">Guardar perfil</button>';
+  h += '<button class="btn btn-primary" id="fp-save">Guardar datos físicos</button></div>';
   b.innerHTML = h;
   $("tk-save-day").onclick = () => { const kg = +$<HTMLInputElement>("tk-weight").value; if (kg > 0) T.logWeight(kg); if ($<HTMLInputElement>("tk-water").value !== "") T.logWater(+$<HTMLInputElement>("tk-water").value); renderComida("perfil"); };
   $("tk-plan").onclick = () => { T.setPlanFollowed(!(DB.planLog?.[T.isoDay()])); renderComida("perfil"); };
