@@ -251,6 +251,7 @@ export function initModals() {
     const amt = +$<HTMLInputElement>("pr-amt").value; if (!amt || amt <= 0) { $("pr-amt").focus(); return; }
     c.balance = Math.max(0, (c.balance || 0) - amt);
     c.lastPayDate = new Date().toISOString();
+    c.payments = c.payments || []; c.payments.push({ date: c.lastPayDate, amount: amt });
     if (prMethod !== "none") {
       const t: any = { id: DB.txSeq++, type: "gasto", amount: amt, cat: "Pago tarjeta", note: ($<HTMLInputElement>("pr-note").value.trim() || ("Pago " + c.name)), date: new Date().toISOString(), method: prMethod === "efectivo" ? "efectivo" : "debito", acctId: prSrc };
       DB.tx.push(t); applyTx(t, 1);

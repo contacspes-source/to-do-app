@@ -40,6 +40,7 @@ function migrate() {
     if (c.cut === undefined) c.cut = "";
     if (c.active === undefined) c.active = true;
     if (c.color === undefined) c.color = "";
+    if (c.payments === undefined) c.payments = [];
   });
   DB.subs = DB.subs || []; DB.subSeq = DB.subSeq || 1;
   DB.goals = DB.goals || []; DB.goalSeq = DB.goalSeq || 1;

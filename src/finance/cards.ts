@@ -56,9 +56,16 @@ export function cycleStart(cut: number): Date {
   if (now.getDate() < cut) { m -= 1; if (m < 0) { m = 11; y -= 1; } }
   return new Date(y, m, cut);
 }
-/** ¿Ya registraste un pago en el ciclo vigente? */
-export function paidThisCycle(c: Card): boolean {
-  if (!c.lastPayDate) return false;
-  const start = c.cut ? cycleStart(+c.cut) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  return new Date(c.lastPayDate) >= start;
+/** Inicio del ciclo vigente (fallback: inicio del mes si no hay corte). */
+function periodStart(c: Card): Date { return c.cut ? cycleStart(+c.cut) : new Date(new Date().getFullYear(), new Date().getMonth(), 1); }
+/** Suma de pagos registrados en el ciclo vigente. */
+export function paidThisCycleAmount(c: Card): number {
+  const start = periodStart(c);
+  return (c.payments || []).filter((p) => new Date(p.date) >= start).reduce((s, p) => s + (+p.amount || 0), 0);
 }
+/** Pago requerido del periodo (lo que toca cubrir): el pago del mes configurado. */
+export function requiredThisCycle(c: Card): number { return cardPay(c) || +(c.min || 0) || 0; }
+/** Lo que falta por pagar este periodo (única fuente de verdad para alertas). */
+export function remainingThisCycle(c: Card): number { const r = requiredThisCycle(c) - paidThisCycleAmount(c); return r > 0 ? +r.toFixed(2) : 0; }
+/** ¿El pago del periodo quedó completo? */
+export function paidThisCycle(c: Card): boolean { return requiredThisCycle(c) > 0 && remainingThisCycle(c) <= 0; }

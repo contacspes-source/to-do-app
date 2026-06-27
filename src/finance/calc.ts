@@ -2,7 +2,7 @@
  * finance/calc.ts — agregados financieros: totales, promedios, proyección y alertas.
  */
 import { DB } from "../database/store";
-import { paidThisCycle } from "./cards";
+import { remainingThisCycle } from "./cards";
 
 import { money } from "../utils/format";
 
@@ -52,7 +52,7 @@ export interface Alert { text: string; urgent: boolean; }
 export function computeAlerts(): Alert[] {
   const A: Alert[] = [], today = new Date();
   DB.cards.forEach((c) => { if (c.active === false) return; const u = c.limit ? (c.balance || 0) / c.limit : 0; if (u > 0.7) A.push({ text: c.name + " supera 70% de uso (" + Math.round(u * 100) + "%)", urgent: false }); });
-  DB.cards.forEach((c) => { if (c.active === false || !((c.balance || 0) > 0) || !c.pay) return; const d = nextDateForDay(+c.pay), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push({ text: "Pago de " + c.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : "")), urgent: days <= 2 }); });
+  DB.cards.forEach((c) => { if (c.active === false || !c.pay) return; const rem = remainingThisCycle(c); if (rem <= 0) return; const d = nextDateForDay(+c.pay), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push({ text: "Restan " + money(rem) + " del pago de " + c.name + (days === 0 ? " (vence hoy)" : " (vence en " + days + "d)"), urgent: days <= 2 }); });
   (DB.subs || []).forEach((s) => { if (s.active === false || !s.day) return; const d = nextDateForDay(+s.day), days = Math.round((+d - +today) / 864e5); if (days >= 0 && days <= 3) A.push({ text: "Cobro de " + s.name + " " + (days === 0 ? "hoy" : "en " + days + " día" + (days > 1 ? "s" : "")), urgent: days <= 1 }); });
   const cm = today.getMonth(), cy = today.getFullYear(), curCat: Record<string, number> = {}, prevCat: Record<string, Record<string, number>> = {};
   DB.tx.filter((t) => t.type === "gasto").forEach((t) => {
@@ -62,7 +62,7 @@ export function computeAlerts(): Alert[] {
   });
   Object.keys(curCat).forEach((cat) => { const hist = prevCat[cat]; if (!hist) return; const ks = Object.keys(hist); if (!ks.length) return; const avg = sum(ks.map((k) => hist[k])) / ks.length; if (avg > 0 && curCat[cat] > avg * 1.3) A.push({ text: "Gastaste más en " + cat + " este mes (" + money(curCat[cat]) + ")", urgent: false }); });
   const cash = totalDebito(); let due = 0;
-  DB.cards.forEach((c) => { if (c.active !== false && (c.balance || 0) > 0 && c.pay) { const d = nextDateForDay(+c.pay); if ((+d - +today) / 864e5 <= 14) due += c.balance || 0; } });
+  DB.cards.forEach((c) => { if (c.active !== false && c.pay) { const r = remainingThisCycle(c); if (r > 0) { const d = nextDateForDay(+c.pay); if ((+d - +today) / 864e5 <= 14) due += r; } } });
   (DB.subs || []).forEach((s) => { if (s.active !== false && s.day) { const d = nextDateForDay(+(s.day as number)); if ((+d - +today) / 864e5 <= 14) due += s.amount || 0; } });
   if (due > cash && due > 0) A.push({ text: "Tus pagos de 14 días (" + money(due) + ") superan tu efectivo (" + money(cash) + ")", urgent: true });
   return A;

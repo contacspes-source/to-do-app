@@ -11,7 +11,7 @@ import {
   sum, acctById, totalDebt, totalDebito, monthTx, applyTx, nextDateForDay,
   monthlyIncome, monthlyGasto, monthlySubs, monthsSpanAll, computeAlerts,
 } from "../finance/calc";
-import { cardBg, cardById, cardPay, paidThisCycle } from "../finance/cards";
+import { cardBg, cardById, cardPay, requiredThisCycle, paidThisCycleAmount, remainingThisCycle } from "../finance/cards";
 import { openCard, openPay, openPayReg, openAcct, openTx, openSub, openGoal } from "../components/modals";
 import { icon } from "../components/icons";
 
@@ -198,7 +198,7 @@ export function renderDinero(seg = dinSeg) {
     used.forEach((c) => (h += '<div class="lrow"><span>' + esc(c.name) + '</span><span class="money">' + money(c.balance || 0) + '</span></div>'));
     if (used.length) h += '<div class="lrow" style="border:0"><b style="font-weight:600">Total usado</b><b class="money" style="color:var(--warn)">' + money(deuda) + '</b></div>';
     h += '<div class="sect">Pagos próximos</div>';
-    const pays = DB.cards.filter((c) => c.active !== false && (c.balance || 0) > 0 && c.pay && !paidThisCycle(c)).map((c) => ({ d: nextDateForDay(+(c.pay as number)), name: c.name, amt: cardPay(c) || c.min || 0 })).sort((a, b) => +a.d - +b.d);
+    const pays = DB.cards.filter((c) => c.active !== false && c.pay && remainingThisCycle(c) > 0).map((c) => ({ d: nextDateForDay(+(c.pay as number)), name: c.name, amt: remainingThisCycle(c) })).sort((a, b) => +a.d - +b.d);
     if (!pays.length) h += '<div class="note">Sin pagos pendientes este periodo.</div>';
     pays.forEach((p) => (h += '<div class="lrow"><span><span class="ld">' + p.d.toLocaleDateString("es-MX", { day: "numeric", month: "short" }) + '</span> · ' + esc(p.name) + '</span><span class="money">' + money(p.amt) + '</span></div>'));
     const ordered = DB.cards.slice().filter((c) => (c.balance || 0) > 0).sort((a, b) => (b.apr || 0) - (a.apr || 0));
@@ -273,7 +273,7 @@ function creditCardHtml(c: any): string {
   const bg = cardBg(c); const clogo = c.bank ? esc(c.bank.charAt(0).toUpperCase()) : "$"; const cl4 = c.last4 ? "•••• " + esc(c.last4) : "•••• ••••";
   const dueD = c.pay ? nextDateForDay(+c.pay) : null; const dueTxt = dueD ? dueD.toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "—"; const days = dueD ? Math.round((+dueD - +new Date()) / 864e5) : null;
   const minP = +(c.min || 0); const prog = +(c.planned || 0);
-  const paid = paidThisCycle(c); const flags: string[] = []; if (!paid && days != null && days >= 0 && days <= 5 && (c.balance || 0) > 0) flags.push(days === 0 ? "Pago hoy" : "Pago en " + days + "d"); if (u >= 70) flags.push("Uso alto " + u + "%");
+  const paidAmt = paidThisCycleAmount(c); const rem = remainingThisCycle(c); const paid = requiredThisCycle(c) > 0 && rem <= 0; const flags: string[] = []; if (rem > 0 && days != null && days >= 0 && days <= 5) flags.push(days === 0 ? "Pago hoy" : "Pago en " + days + "d"); if (u >= 70) flags.push("Uso alto " + u + "%");
   return '<div class="card-cc bankc"' + (c.active === false ? ' style="opacity:.55"' : '') + '>' +
     '<div class="cardface" style="background:' + bg + '"><div class="cf-top"><div><div class="cf-bank">' + esc(c.bank || c.name) + '</div><div class="cf-alias">' + esc(c.alias || c.name) + '</div></div><div class="cf-logo">' + clogo + '</div></div><div><div class="cf-num">' + cl4 + '</div><div class="cf-util">uso ' + u + '%' + (c.active === false ? ' · inactiva' : '') + '</div></div></div>' +
     (flags.length ? '<div class="cflags">' + flags.map((f) => '<span class="cflag">⚠ ' + f + '</span>').join('') + '</div>' : '') +
@@ -286,7 +286,8 @@ function creditCardHtml(c: any): string {
     '<div class="pb-row"><span>Pago mínimo</span><b>' + money(minP) + '</b></div>' +
     '<div class="pb-row"><span>Sin intereses</span><b>' + (prog > 0 ? money(prog) : "—") + '</b></div>' +
     '<div class="pb-row"><span>Se generan</span><b>' + (c.cut ? "día " + c.cut + " (corte)" : "—") + '</b></div>' +
-    '<div class="pb-row pb-app"><span>Estado</span><b style="color:' + (paid ? 'var(--ink-1)' : 'var(--warn)') + '">' + (paid ? 'Pagado este periodo' : 'Pendiente de pago') + '</b></div>' +
+    (paidAmt > 0 ? '<div class="pb-row"><span>Pagado este periodo</span><b>' + money(paidAmt) + '</b></div>' : '') +
+    '<div class="pb-row pb-app"><span>' + (paid ? 'Estado' : 'Restante del periodo') + '</span><b style="color:' + (paid ? 'var(--ink-1)' : 'var(--warn)') + '">' + (paid ? 'Pago completado' : money(rem)) + '</b></div>' +
     '</div>' +
     // secundaria
     '<div class="cinfo">' +
