@@ -91,7 +91,11 @@ export interface AppState {
   mealState?: Record<string, { prep?: boolean; cons?: boolean }>; // semana-día-slot
   supplements?: Supplement[]; supplementSeq?: number;
   supplementLog?: Record<string, boolean>; // dateISO-suppId -> tomado
+  courses?: Course[]; courseSeq?: number; evalSeq?: number;
 }
+
+export interface GradeEval { id: number; name: string; weight: number; grade?: number | null; }
+export interface Course { id: number; name: string; target?: number; credits?: number; evals: GradeEval[]; }
 
 export interface Supplement {
   id: number; name: string; brand?: string; dose?: string; time?: string;

@@ -38,7 +38,7 @@
 <!-- PLAN -->
 <section class="screen" id="plan">
 <div class="h-screen">Tu plan</div>
-<div class="seg" id="planseg"><button class="on" data-v="avance">Avance</button><button data-v="materias">Materias</button><button data-v="horario">Horario</button><button data-v="ruta">Ruta</button><button data-v="enfoque">Enfoque</button><button data-v="revision">Revisión</button></div>
+<div class="seg" id="planseg"><button class="on" data-v="avance">Avance</button><button data-v="materias">Materias</button><button data-v="horario">Horario</button><button data-v="ruta">Ruta</button><button data-v="calif">Calificaciones</button><button data-v="enfoque">Enfoque</button><button data-v="revision">Revisión</button></div>
 <div id="planBody"></div>
 </section>
 
@@ -180,6 +180,12 @@
 </nav>
 <button class="fab-float" id="fab" aria-label="Agregar tarea">+</button>
 
+<!-- MODAL materia (calificaciones) -->
+<div class="modal" id="courseModal"><div class="sheet"><h3 id="cs-title">Materia</h3>
+<div class="field"><span class="label">Nombre</span><input class="input" id="cs-name" placeholder="Ej. Análisis de Algoritmos"></div>
+<div class="field row2"><div><span class="label">Meta (calif.)</span><input class="input mono" id="cs-target" type="number" inputmode="decimal" placeholder="90"></div><div><span class="label">Créditos</span><input class="input mono" id="cs-credits" type="number" inputmode="numeric" placeholder="8"></div></div>
+<button class="btn btn-primary" id="cs-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="cs-cancel">Cancelar</button>
+</div></div>
 <!-- MODAL bloque -->
 <div class="modal" id="blkModal"><div class="sheet"><h3>Editar bloque</h3>
 <div class="field"><span class="label">Hora</span><input class="input mono" id="m-time"></div>

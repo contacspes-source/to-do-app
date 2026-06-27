@@ -274,3 +274,12 @@
 .evi-moderada{color:var(--ink-2)}
 .evi-limitada{color:var(--warn);border-color:var(--warn)}
 .ccact button.tgl.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* ---- Calificaciones ---- */
+.calif-g{font-family:var(--font-mono);font-weight:600;font-size:16px}
+.ev-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--hair)}
+.ev-row .ev-name{font-size:14px}
+.ev-row .ev-right{display:flex;align-items:center;gap:8px;flex:none}
+.ev-grade{width:78px;text-align:center}
+.ev-add{display:flex;gap:8px;margin-top:10px;align-items:center}
+.ev-add .ev-addbtn{width:auto;flex:none;padding:10px 14px}

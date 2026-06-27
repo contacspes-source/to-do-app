@@ -9,6 +9,7 @@ import { MATS, AREAS, SCEN } from "../database/academic-data";
 import { addSect } from "./hoy";
 import { useSegment } from "../hooks/useSegment";
 import { weekKey } from "../services/mealplan";
+import { renderCalif } from "./calificaciones";
 
 let curSeg = "avance", curScen = "normal", curDay = 0;
 let editId: { k: string; id: string } | null = null;
@@ -91,6 +92,8 @@ export function renderPlan(seg = curSeg) {
     h += '<div class="track-h">Ruta Sistemas Inteligentes</div>' + step("Análisis de Algoritmos", "Inscribes 2026-B · base de IA", 1) + arrow() + step("Algoritmos metaheurísticos", "Redes neuronales, deep learning", 0) + arrow() + step("Módulo: Sistemas Inteligentes", "Aprendizaje máquina", 0);
     h += '<div class="sect">Tronco común (también ahora)</div>' + step("Ingeniería de Software", "Abre los Laboratorios Abiertos", 0) + step("Innovación Tecnológica", "Enfoque proyecto / inversión", 0);
     w.innerHTML = h;
+  } else if (seg === "calif") {
+    renderCalif(w);
   } else if (seg === "enfoque") {
     renderEnfoque(w);
   } else if (seg === "revision") {

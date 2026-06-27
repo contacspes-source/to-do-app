@@ -5,6 +5,7 @@
 import type { AppState } from "../types";
 import { STORAGE_KEY } from "../config/app";
 import { seed } from "./seed";
+import { MATS } from "./academic-data";
 
 const LS = window.localStorage;
 
@@ -70,6 +71,9 @@ function migrate() {
   ];
   DB.supplementSeq = DB.supplementSeq || (DB.supplements.reduce((m, x) => Math.max(m, x.id), 0) + 1);
   DB.supplementLog = DB.supplementLog || {};
+  if (!DB.courses) DB.courses = MATS.map((m, i) => ({ id: i + 1, name: m[0], target: 90, credits: 8, evals: [] }));
+  DB.courseSeq = DB.courseSeq || (DB.courses.reduce((mx, c) => Math.max(mx, c.id), 0) + 1);
+  DB.evalSeq = DB.evalSeq || 1;
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }
