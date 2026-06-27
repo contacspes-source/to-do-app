@@ -14,6 +14,7 @@ import { buildToday, momentum, financeToday, type TodayItem } from "../services/
 import { money } from "../utils/format";
 import * as T from "../services/tracking";
 import { recipesForDay } from "../services/mealplan";
+import { openRecipe } from "../components/modals";
 
 let hoyMode = "hoy";
 
@@ -50,21 +51,22 @@ export function renderHoy() {
   // lista priorizada
   addSect(list, pend.length ? "Haz esto primero" : "Todo listo por hoy");
   if (!pend.length) list.innerHTML += '<div class="note">No queda nada pendiente. Disfruta tu día.</div>';
-  items.forEach((it, idx) => list.appendChild(todayRow(it, idx)));
+  let rank = 0;
+  items.forEach((it) => list.appendChild(todayRow(it, it.done ? null : ++rank)));
 
   // tarjetas resumen
   renderSummary(list);
 }
 
-function todayRow(it: TodayItem, idx: number): HTMLElement {
+function todayRow(it: TodayItem, rank: number | null): HTMLElement {
   const el = document.createElement("div");
-  el.className = "task" + (it.done ? " done" : "");
+  el.className = "task today-row" + (it.done ? " done" : "");
   const tag = '<span class="badge ' + (it.group === "urgente" ? "alta" : it.group === "salud" ? "media" : "baja") + '">' + GROUP_LABEL[it.group] + '</span>';
-  el.innerHTML = '<button class="check" aria-label="Completar">' + CHK + '</button><div class="body"><span class="ttl">' + esc(it.label) + '</span><div class="meta">' + tag + (it.meta ? '<span class="time">' + esc(it.meta) + '</span>' : '') + (it.goto && !it.done ? '<span class="fpill">abrir →</span>' : '') + '</div></div>';
+  const lead = it.done ? '<button class="check" aria-label="Hecho">' + CHK + '</button>' : '<button class="rank" aria-label="Completar">' + rank + '</button>';
+  el.innerHTML = lead + '<div class="body"><span class="ttl">' + esc(it.label) + '</span><div class="meta">' + tag + (it.meta ? '<span class="time">' + esc(it.meta) + '</span>' : '') + (it.goto && !it.done ? '<span class="fpill">abrir →</span>' : '') + '</div></div>';
   const act = () => { if (it.toggle) { it.toggle(); renderHoy(); } else if (it.goto) { go(it.goto.screen); } };
-  el.querySelector(".check")!.addEventListener("click", (e) => { e.stopPropagation(); act(); });
+  el.querySelector(".rank,.check")!.addEventListener("click", (e) => { e.stopPropagation(); act(); });
   el.onclick = act;
-  void idx;
   return el;
 }
 
@@ -78,11 +80,12 @@ function renderSummary(list: HTMLElement) {
   // Finanzas
   grid.innerHTML += '<button class="tcard" data-go2="dinero"><div class="tc-h">Finanzas</div><div class="tc-big">' + money(fin.cash) + '</div><div class="tc-sub">disponible</div>' + (fin.next ? '<div class="tc-line">Próximo: ' + esc((fin.next as any).name) + ' · ' + ((fin.next as any).days <= 0 ? "hoy" : (fin.next as any).days + "d") + '</div>' : '<div class="tc-line">Sin pagos próximos</div>') + '</button>';
   // MealPrep
-  grid.innerHTML += '<button class="tcard" data-go2="comida"><div class="tc-h">Comida de hoy</div><div class="tc-big2">' + (comida ? esc(comida.name) : "—") + '</div><div class="tc-line">' + (comida ? "Toca para ver la receta" : "Genera tu plan") + '</div></button>';
+  grid.innerHTML += '<button class="tcard" ' + (comida ? 'data-recipe2="' + comida.id + '" data-rday="' + di + '"' : 'data-go2="comida"') + '><div class="tc-h">Comida de hoy</div><div class="tc-big2">' + (comida ? esc(comida.name) : "—") + '</div><div class="tc-line">' + (comida ? "Toca para ver la receta" : "Genera tu plan") + '</div></button>';
   // Progreso
   grid.innerHTML += '<button class="tcard" data-go2="comida"><div class="tc-h">Progreso</div><div class="tc-big">' + st.plan + ' días</div><div class="tc-sub">racha de plan</div><div class="tc-line">Peso: ' + peso + ' kg</div></button>';
   list.appendChild(grid);
   qsa<HTMLElement>("[data-go2]", grid).forEach((b) => (b.onclick = () => go(b.dataset.go2!)));
+  qsa<HTMLElement>("[data-recipe2]", grid).forEach((b) => (b.onclick = () => openRecipe(b.dataset.recipe2!, { day: +b.dataset.rday!, slot: "comida" }, renderHoy)));
 }
 
 /* ---------- vista "Todos los pendientes" (lista completa de tareas) ---------- */

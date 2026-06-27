@@ -12,7 +12,7 @@ import {
   monthlyIncome, monthlyGasto, monthlySubs, monthsSpanAll, computeAlerts,
 } from "../finance/calc";
 import { cardBg, cardById } from "../finance/cards";
-import { openCard, openPay, openAcct, openTx, openSub, openGoal } from "../components/modals";
+import { openCard, openPay, openPayReg, openAcct, openTx, openSub, openGoal } from "../components/modals";
 import { icon } from "../components/icons";
 
 let dinSeg = "home";
@@ -295,11 +295,12 @@ function creditCardHtml(c: any): string {
     '<div><div class="k">Próximo venc.</div><div class="vv">' + (days != null && days >= 0 ? "en " + days + "d" : "—") + '</div></div>' +
     '</div>' +
     // acciones rápidas
-    '<div class="ccact ccmain"><button class="cc-pay" data-pay="' + c.id + '">Modificar pago del mes</button><button data-buy="' + c.id + '">Registrar compra</button><button data-edit="' + c.id + '">Editar</button><button data-hist="' + c.id + '">Ver historial</button></div>' +
+    '<div class="ccact ccmain"><button class="cc-pay" data-payreg="' + c.id + '">Registrar pago</button><button data-buy="' + c.id + '">Registrar compra</button><button data-pay="' + c.id + '">Modificar pago del mes</button><button data-edit="' + c.id + '">Editar</button><button data-hist="' + c.id + '">Ver historial</button></div>' +
     '<div class="ccact ccsec"><button data-susp="' + c.id + '">' + (c.active === false ? "Activar" : "Suspender") + '</button><button data-delc="' + c.id + '">Eliminar</button></div>' +
     '</div>';
 }
 function wireCardActions(w: HTMLElement) {
+  qsa<HTMLElement>("[data-payreg]", w).forEach((b) => (b.onclick = () => openPayReg(b.dataset.payreg!)));
   qsa<HTMLElement>("[data-pay]", w).forEach((b) => (b.onclick = () => openPay(b.dataset.pay!)));
   qsa<HTMLElement>("[data-buy]", w).forEach((b) => (b.onclick = () => openTx("gasto", undefined, { method: "credito", cardId: b.dataset.buy })));
   qsa<HTMLElement>("[data-edit]", w).forEach((b) => (b.onclick = () => openCard(b.dataset.edit)));

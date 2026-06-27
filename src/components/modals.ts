@@ -7,8 +7,10 @@ import { DB, save } from "../database/store";
 import { $, qsa, pillGroup, resetPills, openModal, closeModal } from "../utils/dom";
 import { esc, money } from "../utils/format";
 import { CATEGORIES } from "../config/app";
-import { CARDCOLORS, CARDGRADS, CARDTPL, cardById, cardPayType } from "../finance/cards";
+import { CARDCOLORS, CARDGRADS, CARDTPL, cardById, cardPayType, cardPay } from "../finance/cards";
 import { recipeById, recipeInfo, recipeMacros } from "../database/recipes";
+import { weekKey } from "../services/mealplan";
+import { isoDay, setMealsLogged } from "../services/tracking";
 import type { Supplement } from "../types";
 import { applyTx } from "../finance/calc";
 import { renderDinero } from "../pages/dinero";
@@ -71,6 +73,28 @@ export function openPay(id: any) {
   $<HTMLInputElement>("pay-min").value = String(c.min || "");
   $<HTMLInputElement>("pay-prog").value = String(c.planned || "");
   updatePayModalHint(); openModal("payModal");
+}
+
+/* ============ Registrar pago de tarjeta (baja la deuda) ============ */
+let prCardId: any = null, prMethod = "efectivo", prSrc: any = null;
+function buildPrSrc() {
+  const wrap = $("pr-src-wrap"), box = $("pr-src");
+  if (prMethod === "none") { wrap.style.display = "none"; prSrc = null; return; }
+  if (prMethod === "efectivo") { wrap.style.display = "none"; const ef = DB.accounts.find((a) => a.type === "efectivo"); prSrc = ef ? ef.id : null; return; }
+  wrap.style.display = "block"; box.innerHTML = "";
+  const items = DB.accounts.filter((a) => a.type !== "efectivo");
+  if (!items.length) { box.innerHTML = '<div class="note" style="margin:0">No hay cuentas de débito. Agrégalas o usa Efectivo / Solo registrar.</div>'; prSrc = null; return; }
+  items.forEach((a, i) => (box.innerHTML += '<button class="pill' + (i === 0 ? " sel" : "") + '" data-v="' + a.id + '">' + esc(a.name) + '</button>'));
+  prSrc = items[0].id; pillGroup(box, (v) => (prSrc = v));
+}
+export function openPayReg(id: any) {
+  const c = cardById(id); if (!c) return; prCardId = id;
+  $("pr-title").textContent = "Registrar pago · " + c.name;
+  $("pr-info").textContent = "Saldo actual " + money(c.balance || 0) + (c.min ? " · mínimo " + money(c.min) : "");
+  $<HTMLInputElement>("pr-amt").value = String(cardPay(c) || c.min || c.balance || "");
+  $<HTMLInputElement>("pr-note").value = "";
+  prMethod = "efectivo"; resetPills("pr-method", "efectivo"); buildPrSrc();
+  openModal("payRegModal"); setTimeout(() => $("pr-amt").focus(), 250);
 }
 
 /* ============ Cuenta ============ */
@@ -145,17 +169,37 @@ export function openBuyGrocery(onDone?: () => void) {
   $<HTMLInputElement>("buy-amt").value = ""; $<HTMLInputElement>("buy-note").value = ""; openModal("buyModal"); setTimeout(() => $("buy-amt").focus(), 250);
 }
 
-/* ============ Receta (modal de ayuda ?) ============ */
-export function openRecipe(id: string) {
+/* ============ Receta + flujo de comida encadenado ============ */
+let rcCtx: { day: number; slot: string } | null = null;
+let rcOnChange: (() => void) | null = null;
+export function openRecipe(id: string, ctx?: { day: number; slot: string }, onChange?: () => void) {
   const r = recipeById(id); if (!r) return;
+  rcCtx = ctx || null; rcOnChange = onChange || null;
   const m = recipeMacros(id), info = recipeInfo(r);
   $("rc-title").textContent = r.name;
   $("rc-meta").innerHTML = esc(r.protein) + " · " + m.kcal + " kcal · " + esc(info.time);
   $("rc-ing").innerHTML = r.ingredients.map((i) => '<div class="lrow"><span>' + esc(i.item) + '</span><span class="ld">' + esc(i.qty) + '</span></div>').join("");
   $("rc-prep").textContent = r.prep;
   $("rc-keep").textContent = info.keep;
+  renderRcActions();
   openModal("recipeModal");
 }
+function mealKey() { return rcCtx ? weekKey() + "-" + rcCtx.day + "-" + rcCtx.slot : ""; }
+function renderRcActions() {
+  const w = $("rc-actions"); if (!w) return;
+  if (!rcCtx) { w.innerHTML = ""; return; }
+  const mk = mealKey(); const st = (DB.mealState || {})[mk] || {};
+  w.innerHTML = '<div class="sect">Acciones</div>' +
+    '<div class="pills"><button class="pill' + (st.prep ? " sel" : "") + '" id="rc-prep">Preparada</button><button class="pill' + (st.cons ? " sel" : "") + '" id="rc-cons">Consumida</button></div>' +
+    '<div style="height:12px"></div><button class="btn btn-primary" id="rc-reg">Registrar comida de hoy</button>' +
+    '<div class="note" id="rc-regnote" style="margin-top:8px">Al registrar, suma a tu Momentum y progreso del día.</div>';
+  const setSt = (k: "prep" | "cons", v: boolean) => { DB.mealState = DB.mealState || {}; const o = DB.mealState[mk] || (DB.mealState[mk] = {}); o[k] = v; save(); renderRcActions(); if (rcOnChange) rcOnChange(); };
+  $("rc-prep").onclick = () => setSt("prep", !st.prep);
+  $("rc-cons").onclick = () => setSt("cons", !st.cons);
+  $("rc-reg").onclick = () => { setMealsLogged(true); DB.mealState = DB.mealState || {}; const o = DB.mealState[mk] || (DB.mealState[mk] = {}); o.cons = true; save(); const n = $("rc-regnote"); if (n) { n.textContent = "✓ Comida registrada. ¡Vas bien!"; n.style.color = "var(--ink-1)"; } renderRcActionsKeepNote(); if (rcOnChange) rcOnChange(); };
+  void isoDay;
+}
+function renderRcActionsKeepNote() { /* mantiene el mensaje de confirmación tras registrar */ }
 
 /* ============ Suplemento ============ */
 let suppEdit: number | null = null, suppRem = 1, suppDone: (() => void) | null = null;
@@ -198,6 +242,19 @@ export function initModals() {
     c.min = +$<HTMLInputElement>("pay-min").value || 0;
     c.planned = +$<HTMLInputElement>("pay-prog").value || 0;
     save(); closeModal("payModal"); renderDinero("tarjetas");
+  };
+  // registrar pago (baja deuda + descuenta de cuenta + queda en historial)
+  pillGroup($("pr-method"), (v) => { prMethod = v; buildPrSrc(); });
+  $("pr-cancel").onclick = () => closeModal("payRegModal");
+  $("pr-save").onclick = () => {
+    const c = cardById(prCardId); if (!c) return;
+    const amt = +$<HTMLInputElement>("pr-amt").value; if (!amt || amt <= 0) { $("pr-amt").focus(); return; }
+    c.balance = Math.max(0, (c.balance || 0) - amt);
+    if (prMethod !== "none") {
+      const t: any = { id: DB.txSeq++, type: "gasto", amount: amt, cat: "Pago tarjeta", note: ($<HTMLInputElement>("pr-note").value.trim() || ("Pago " + c.name)), date: new Date().toISOString(), method: prMethod === "efectivo" ? "efectivo" : "debito", acctId: prSrc };
+      DB.tx.push(t); applyTx(t, 1);
+    }
+    save(); closeModal("payRegModal"); renderDinero("tarjetas");
   };
 
   // cuenta
@@ -245,5 +302,5 @@ export function initModals() {
   };
 
   // cerrar al tocar el fondo
-  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal", "chooseModal", "suppModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
+  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal", "chooseModal", "suppModal", "payRegModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
 }

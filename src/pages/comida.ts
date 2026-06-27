@@ -45,7 +45,7 @@ function dayView(day: number): string {
     v += '<div class="dv-mhead"><span class="dv-slot">' + label + '</span><span class="dv-rname">' + (recipe ? esc(recipe.name) : "—") + '</span></div>';
     v += '<div class="mchips">' + (recipe ? macroChips(recipe.id) : "") + '</div>';
     v += '<div class="dv-acts">' +
-      (recipe ? '<button data-recipe="' + recipe.id + '">Receta</button>' : "") +
+      (recipe ? '<button data-recipe="' + recipe.id + '" data-rday="' + day + '" data-rslot="' + slot + '">Receta</button>' : "") +
       '<button data-change="' + slot + '" data-pool="' + pool + '" data-day="' + day + '">Cambiar</button>' +
       '<button class="tgl' + (st.prep ? " on" : "") + '" data-prep="' + mk + '">Preparada</button>' +
       '<button class="tgl' + (st.cons ? " on" : "") + '" data-cons="' + mk + '">Consumida</button>' +
@@ -84,7 +84,7 @@ export function renderComida(seg = comidaSeg) {
     w.innerHTML = h;
     qsa<HTMLElement>("#plantype button", w).forEach((b) => (b.onclick = () => { generatePlan(b.dataset.v!); renderComida("plan"); }));
     qsa<HTMLElement>("[data-day]", w).forEach((b) => (b.onclick = () => { openDay = +b.dataset.day!; renderComida("plan"); }));
-    qsa<HTMLElement>("[data-recipe]", w).forEach((b) => (b.onclick = () => openRecipe(b.dataset.recipe!)));
+    qsa<HTMLElement>("[data-recipe]", w).forEach((b) => (b.onclick = () => openRecipe(b.dataset.recipe!, { day: +b.dataset.rday!, slot: b.dataset.rslot! }, () => renderComida("plan"))));
     qsa<HTMLElement>("[data-change]", w).forEach((b) => (b.onclick = () => openChooser(+b.dataset.day!, b.dataset.change!, b.dataset.pool as MealSlot)));
     qsa<HTMLElement>("[data-prep]", w).forEach((b) => (b.onclick = () => { toggleMeal(b.dataset.prep!, "prep"); renderComida("plan"); }));
     qsa<HTMLElement>("[data-cons]", w).forEach((b) => (b.onclick = () => { toggleMeal(b.dataset.cons!, "cons"); renderComida("plan"); }));
