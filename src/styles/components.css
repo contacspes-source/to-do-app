@@ -335,3 +335,7 @@ table.tt{min-width:680px}
 .dec.urgent .dec-ic{color:var(--warn)}
 .dec .dec-t{flex:1;font-size:13.5px;line-height:1.4;color:var(--ink-1)}
 .dec .dec-go{flex:none;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);font-weight:600;white-space:nowrap}
+
+/* ===== Estado de guardado (topbar) ===== */
+.savestate{margin-left:auto;margin-right:10px;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);opacity:0;transition:opacity .3s var(--ease);white-space:nowrap}
+.savestate.show{opacity:1}

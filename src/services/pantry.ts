@@ -49,3 +49,16 @@ export function suggestions(): { recipe: Recipe; coverage: number; missing: stri
     return { recipe: r, coverage: Math.round((have / r.ingredients.length) * 100), missing };
   }).filter((x) => x.coverage > 0).sort((a, b) => b.coverage - a.coverage);
 }
+
+/** Descuenta del refri los ingredientes de una receta consumida (uno por ingrediente). */
+export function consumeRecipe(recipeId: string): number {
+  const r = RECIPES.find((x) => x.id === recipeId); if (!r) return 0;
+  let removed = 0;
+  r.ingredients.forEach((ing) => {
+    const gi = ing.item.toLowerCase();
+    const idx = (DB.pantry || []).findIndex((p) => { const pi = p.item.toLowerCase(); return gi.includes(pi) || pi.includes(gi.split(" ")[0]); });
+    if (idx >= 0) { DB.pantry!.splice(idx, 1); removed++; }
+  });
+  if (removed) save();
+  return removed;
+}

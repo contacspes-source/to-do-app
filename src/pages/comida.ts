@@ -110,7 +110,7 @@ export function renderComida(seg = comidaSeg) {
     w.innerHTML = h;
     qsa<HTMLElement>(".check", w).forEach((b) => { b.onclick = () => { const k = b.dataset.k!; DB.comidaCheck[k] = !DB.comidaCheck[k]; save(); renderComida("super"); }; });
     $("superReset").onclick = () => { DB.comidaCheck = {}; save(); renderComida("super"); };
-    $("boughtBtn").onclick = () => openBuyGrocery(() => renderComida("super"));
+    $("boughtBtn").onclick = () => openBuyGrocery(() => { const n = P.importFromGrocery(); if (n) alert("Se agregaron " + n + " productos a tu refri."); renderComida("super"); });
 
   } else if (seg === "refri") {
     renderRefri(w);

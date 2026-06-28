@@ -53,6 +53,7 @@ export interface Reminders { enabled?: boolean; desayuno?: string; comida?: stri
 
 export interface AppState {
   theme: "light" | "dark";
+  updatedAt?: number;
   name?: string;
   accent?: string;
   cur: string;
@@ -89,7 +90,7 @@ export interface AppState {
   finPins?: string[];   // accesos de Finanzas fijados
   finHidden?: string[]; // accesos de Finanzas ocultos
   finOrder?: string[];  // orden personalizado de accesos
-  mealState?: Record<string, { prep?: boolean; cons?: boolean }>; // semana-día-slot
+  mealState?: Record<string, { prep?: boolean; cons?: boolean; pantryDone?: boolean }>; // semana-día-slot
   supplements?: Supplement[]; supplementSeq?: number;
   supplementLog?: Record<string, boolean>; // dateISO-suppId -> tomado
   courses?: Course[]; courseSeq?: number; evalSeq?: number;

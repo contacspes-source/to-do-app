@@ -3,7 +3,7 @@
  * Reemplaza el <script type="module"> suelto del archivo único, ahora modular.
  */
 import { supabase } from "../database/client";
-import { DB, STORAGE_KEY, onSave, setDB } from "../database/store";
+import { DB, STORAGE_KEY, onSave, setDB, setSyncStatus } from "../database/store";
 import { $ } from "../utils/dom";
 
 let currentUser: any = null;
@@ -25,8 +25,10 @@ async function cloudPush() {
   if (!currentUser || !supabase) return;
   const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
   let data; try { data = JSON.parse(raw); } catch { return; }
+  setSyncStatus("Sincronizando…");
   const res = await supabase.from("app_state").upsert({ user_id: currentUser.id, data }, { onConflict: "user_id" });
-  if (res.error) console.warn("push", res.error);
+  if (res.error) { console.warn("push", res.error); setSyncStatus("Error al sincronizar"); }
+  else setSyncStatus("Sincronizado ✓");
 }
 function schedulePush() { if (!currentUser) return; clearTimeout(pushTimer); pushTimer = setTimeout(cloudPush, 1200); }
 
@@ -37,16 +39,17 @@ async function onLogin() {
   setAcc("Sesión: <b>" + em + "</b> · sincronizando…");
   const cloud = await cloudPull();
   const localRaw = localStorage.getItem(STORAGE_KEY);
-  if (cloud) {
-    const cloudStr = JSON.stringify(cloud);
-    if (cloudStr !== localRaw) {
-      setDB(cloud);                       // aplica datos y re-renderiza, SIN recargar
-      setAcc("Sesión: <b>" + em + "</b> · datos sincronizados ✓");
-    } else {
-      setAcc("Sesión: <b>" + em + "</b> · sincronizado ✓");
-    }
-    syncedOnce = true;
-  } else { await cloudPush(); setAcc("Sesión: <b>" + em + "</b> · sincronizado ✓"); }
+  let local: any = null; try { local = localRaw ? JSON.parse(localRaw) : null; } catch {}
+  const cloudU = (cloud && (cloud as any).updatedAt) || 0;
+  const localU = (local && local.updatedAt) || 0;
+  if (cloud && cloudU >= localU) {
+    // la nube es igual o más reciente → la aplicamos
+    if (JSON.stringify(cloud) !== localRaw) { setDB(cloud); setAcc("Sesión: <b>" + em + "</b> · datos sincronizados ✓"); }
+    else setAcc("Sesión: <b>" + em + "</b> · sincronizado ✓");
+  } else {
+    // no hay nube, o lo local es más reciente → subimos local (no se pisa lo nuevo)
+    await cloudPush(); setAcc("Sesión: <b>" + em + "</b> · sincronizado ✓");
+  }
   syncedOnce = true; loginRunning = false;
 }
 function onLogout() { currentUser = null; showAuthed(false); setAcc("Sin sesión · los datos se guardan solo en este dispositivo."); }

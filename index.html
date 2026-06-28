@@ -7,6 +7,10 @@
 <title>Mi semestre</title>
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="apple-touch-icon" href="./favicon.svg">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mi semestre">
 </head>
 <body data-theme="light">
 <div class="shell">
@@ -23,7 +27,7 @@
 </aside>
 <main class="main">
 <div class="app">
-<div class="topbar"><span class="brandwrap"><img class="brand-mark" src="./logo.svg" alt=""><span class="brand" id="brand">Hoy</span></span><button class="icbtn" id="gear" aria-label="Ajustes">⚙</button></div>
+<div class="topbar"><span class="brandwrap"><img class="brand-mark" src="./logo.svg" alt=""><span class="brand" id="brand">Hoy</span></span><span class="savestate" id="saveState"></span><button class="icbtn" id="gear" aria-label="Ajustes">⚙</button></div>
 
 <!-- HOY -->
 <section class="screen on" id="hoy">

@@ -6,7 +6,7 @@ import "./styles/base.css";
 import "./styles/nav.css";
 import "./styles/components.css";
 
-import { DB, onReplace } from "./database/store";
+import { DB, onReplace, onStatus } from "./database/store";
 import { $, qsa } from "./utils/dom";
 import { icon } from "./components/icons";
 import { initRouter, go, savedScreen, rerenderCurrent } from "./router";
@@ -62,5 +62,13 @@ startReminderWatcher();
 // re-render al sincronizar datos de la nube (sin recargar)
 onReplace(rerenderCurrent);
 
+// indicador de guardado/sincronización en la barra superior
+onStatus((txt) => { const el = $("saveState"); if (!el) return; el.textContent = txt; el.classList.add("show"); clearTimeout((el as any)._t); (el as any)._t = setTimeout(() => el.classList.remove("show"), 1800); });
+
 // pantalla inicial: restaura la última que usaste
 go(savedScreen());
+
+// PWA: registrar service worker (instalable + offline)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => { navigator.serviceWorker.register("./sw.js").catch(() => {}); });
+}

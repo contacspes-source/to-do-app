@@ -10,6 +10,7 @@ import { CATEGORIES } from "../config/app";
 import { CARDCOLORS, CARDGRADS, CARDTPL, cardById, cardPayType, cardPay } from "../finance/cards";
 import { recipeById, recipeInfo, recipeMacros } from "../database/recipes";
 import { weekKey } from "../services/mealplan";
+import { consumeRecipe } from "../services/pantry";
 import { isoDay, setMealsLogged } from "../services/tracking";
 import type { Supplement } from "../types";
 import { applyTx } from "../finance/calc";
@@ -173,9 +174,10 @@ export function openBuyGrocery(onDone?: () => void) {
 /* ============ Receta + flujo de comida encadenado ============ */
 let rcCtx: { day: number; slot: string } | null = null;
 let rcOnChange: (() => void) | null = null;
+let rcId = "";
 export function openRecipe(id: string, ctx?: { day: number; slot: string }, onChange?: () => void) {
   const r = recipeById(id); if (!r) return;
-  rcCtx = ctx || null; rcOnChange = onChange || null;
+  rcCtx = ctx || null; rcOnChange = onChange || null; rcId = id;
   const m = recipeMacros(id), info = recipeInfo(r);
   $("rc-title").textContent = r.name;
   $("rc-meta").innerHTML = esc(r.protein) + " · " + m.kcal + " kcal · " + esc(info.time);
@@ -194,10 +196,10 @@ function renderRcActions() {
     '<div class="pills"><button class="pill' + (st.prep ? " sel" : "") + '" id="rc-prep">Preparada</button><button class="pill' + (st.cons ? " sel" : "") + '" id="rc-cons">Consumida</button></div>' +
     '<div style="height:12px"></div><button class="btn btn-primary" id="rc-reg">Registrar comida de hoy</button>' +
     '<div class="note" id="rc-regnote" style="margin-top:8px">Al registrar, suma a tu Momentum y progreso del día.</div>';
-  const setSt = (k: "prep" | "cons", v: boolean) => { DB.mealState = DB.mealState || {}; const o = DB.mealState[mk] || (DB.mealState[mk] = {}); o[k] = v; save(); renderRcActions(); if (rcOnChange) rcOnChange(); };
+  const setSt = (k: "prep" | "cons", v: boolean) => { DB.mealState = DB.mealState || {}; const o = DB.mealState[mk] || (DB.mealState[mk] = {}); o[k] = v; if (k === "cons" && v && !o.pantryDone) { consumeRecipe(rcId); o.pantryDone = true; } save(); renderRcActions(); if (rcOnChange) rcOnChange(); };
   $("rc-prep").onclick = () => setSt("prep", !st.prep);
   $("rc-cons").onclick = () => setSt("cons", !st.cons);
-  $("rc-reg").onclick = () => { setMealsLogged(true); DB.mealState = DB.mealState || {}; const o = DB.mealState[mk] || (DB.mealState[mk] = {}); o.cons = true; save(); const n = $("rc-regnote"); if (n) { n.textContent = "✓ Comida registrada. ¡Vas bien!"; n.style.color = "var(--ink-1)"; } renderRcActionsKeepNote(); if (rcOnChange) rcOnChange(); };
+  $("rc-reg").onclick = () => { setMealsLogged(true); DB.mealState = DB.mealState || {}; const o = DB.mealState[mk] || (DB.mealState[mk] = {}); o.cons = true; if (!o.pantryDone) { consumeRecipe(rcId); o.pantryDone = true; } save(); const n = $("rc-regnote"); if (n) { n.textContent = "✓ Comida registrada. ¡Vas bien!"; n.style.color = "var(--ink-1)"; } renderRcActionsKeepNote(); if (rcOnChange) rcOnChange(); };
   void isoDay;
 }
 function renderRcActionsKeepNote() { /* mantiene el mensaje de confirmación tras registrar */ }

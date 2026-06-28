@@ -1,0 +1,15 @@
+{
+  "name": "Mi semestre",
+  "short_name": "Mi semestre",
+  "description": "Tu Sistema Operativo Personal: día, dinero, comida, plan y progreso en un solo lugar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0d0f",
+  "theme_color": "#0d0d0f",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "./logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

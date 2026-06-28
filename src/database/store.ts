@@ -91,8 +91,13 @@ export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }
 let syncHook: (() => void) | null = null;
 export function onSave(fn: () => void) { syncHook = fn; }
 
+/** Estado de guardado/sincronización visible en la barra superior. */
+let statusHook: ((s: string) => void) | null = null;
+export function onStatus(fn: (s: string) => void) { statusHook = fn; }
+export function setSyncStatus(s: string) { if (statusHook) statusHook(s); }
+
 /** Guarda local y dispara sync nube. Único punto de escritura. */
-export function save() { persist(); if (syncHook) syncHook(); }
+export function save() { DB.updatedAt = Date.now(); persist(); setSyncStatus("Guardado"); if (syncHook) syncHook(); }
 
 /** Hook para re-render cuando llegan datos de la nube (sin recargar la página). */
 let replaceHook: (() => void) | null = null;
