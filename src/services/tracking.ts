@@ -21,6 +21,8 @@ export function latestWeight(): number { const l = DB.weightLog || []; return l.
 export function logWater(liters: number) { DB.waterLog = DB.waterLog || {}; DB.waterLog[isoDay()] = liters; save(); }
 export function setPlanFollowed(on: boolean) { DB.planLog = DB.planLog || {}; DB.planLog[isoDay()] = on; save(); }
 export function setMealsLogged(on: boolean) { DB.mealsLog = DB.mealsLog || {}; DB.mealsLog[isoDay()] = on; save(); }
+export function setActivity(on: boolean) { DB.activityLog = DB.activityLog || {}; DB.activityLog[isoDay()] = on; save(); }
+export function todayActivity(): boolean { return !!(DB.activityLog || {})[isoDay()]; }
 export function addMeasurement(m: Measurement) { DB.measurements = DB.measurements || []; DB.measurements.push(m); DB.measurements.sort((a, b) => a.date.localeCompare(b.date)); save(); }
 export function addPhoto(img: string) { DB.bodyPhotos = DB.bodyPhotos || []; DB.bodyPhotos.push({ date: isoDay(), img }); save(); }
 export function removePhoto(i: number) { (DB.bodyPhotos || []).splice(i, 1); save(); }

@@ -6,15 +6,15 @@ import { DB, save } from "./database/store";
 import { $, qsa } from "./utils/dom";
 import { renderHoy } from "./pages/hoy";
 import { renderPlan } from "./pages/plan";
-import { renderHabitos } from "./pages/constancia";
+import { renderProgreso } from "./pages/progreso";
 import { renderDinero, setDineroSeg } from "./pages/dinero";
 import { renderComida } from "./pages/comida";
 import { renderAjustes } from "./pages/ajustes";
 
 let currentScreen = "hoy";
-const MAIN_SCREENS = ["hoy", "plan", "habitos", "dinero", "comida", "ajustes"];
+const MAIN_SCREENS = ["hoy", "plan", "progreso", "dinero", "comida", "ajustes"];
 const TITLES: Record<string, string> = {
-  hoy: "Hoy", plan: "Plan", habitos: "Constancia", dinero: "Dinero",
+  hoy: "Hoy", plan: "Plan", progreso: "Progreso", dinero: "Dinero",
   comida: "Comida", add: "Nueva tarea", detalle: "Detalle", ajustes: "Ajustes",
 };
 
@@ -28,7 +28,7 @@ export function go(id: string) {
   window.scrollTo(0, 0);
   if (id === "hoy") renderHoy();
   else if (id === "plan") renderPlan();
-  else if (id === "habitos") renderHabitos();
+  else if (id === "progreso") renderProgreso();
   else if (id === "dinero") renderDinero();
   else if (id === "comida") renderComida();
   else if (id === "ajustes") renderAjustes();
@@ -38,7 +38,7 @@ export function go(id: string) {
 export function goMoney(seg: string) { setDineroSeg(seg); go("dinero"); }
 
 /** Pantalla guardada (para restaurar al cargar). */
-export function savedScreen(): string { try { return localStorage.getItem("misem_screen") || "hoy"; } catch { return "hoy"; } }
+export function savedScreen(): string { try { const s = localStorage.getItem("misem_screen") || "hoy"; return s === "habitos" ? "progreso" : s; } catch { return "hoy"; } }
 /** Re-renderiza la pantalla actual (tras recibir datos de la nube). */
 export function rerenderCurrent() { go(MAIN_SCREENS.includes(currentScreen) ? currentScreen : "hoy"); }
 

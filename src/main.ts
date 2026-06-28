@@ -16,7 +16,7 @@ import { initAdd, openAdd } from "./pages/tarea-nueva";
 import { initDetalle } from "./pages/tarea-detalle";
 import { initPlan } from "./pages/plan";
 import { initCalif } from "./pages/calificaciones";
-import { initConstancia } from "./pages/constancia";
+import { initProgreso } from "./pages/progreso";
 import { initDinero } from "./pages/dinero";
 import { initComida } from "./pages/comida";
 import { initAjustes } from "./pages/ajustes";
@@ -35,7 +35,7 @@ initAdd();
 initDetalle();
 initPlan();
 initCalif();
-initConstancia();
+initProgreso();
 initDinero();
 initComida();
 initAjustes();
@@ -47,7 +47,7 @@ $("newSide").onclick = openAdd;
 
 // iconografía monocromática (sin emojis)
 function initIcons() {
-  const map: Record<string, string> = { hoy: "hoy", plan: "plan", habitos: "constancia", dinero: "dinero", comida: "comida", ajustes: "ajustes" };
+  const map: Record<string, string> = { hoy: "hoy", plan: "plan", progreso: "constancia", dinero: "dinero", comida: "comida", ajustes: "ajustes" };
   qsa<HTMLElement>("[data-go]").forEach((b) => { const ic = map[b.dataset.go!]; if (!ic) return; const sp = b.querySelector(".si,.ni") as HTMLElement | null; if (sp) sp.innerHTML = icon(ic, sp.classList.contains("ni") ? 20 : 18); });
   qsa<HTMLElement>('[data-money="tarjetas"]').forEach((b) => { const sp = b.querySelector(".si") as HTMLElement | null; if (sp) sp.innerHTML = icon("tarjetas"); });
   const gear = $("gear"); if (gear) gear.innerHTML = icon("ajustes");

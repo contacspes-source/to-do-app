@@ -12,16 +12,13 @@
 <div class="shell">
 <aside class="side">
 <div class="logo"><img class="logo-mark" src="./logo.svg" alt="logo"> Mi <em>semestre</em></div>
-<div class="side-grp">Académico</div>
+<div class="side-grp">Día</div>
 <button class="on" data-go="hoy"><span class="si">◎</span><span class="sl">Hoy</span></button>
-<button data-go="plan"><span class="si">▤</span><span class="sl">Plan</span></button>
-<button data-go="habitos"><span class="si">◇</span><span class="sl">Constancia</span></button>
-<div class="side-grp">Finanzas</div>
+<div class="side-grp">Servicios</div>
 <button data-go="dinero"><span class="si">$</span><span class="sl">Dinero</span></button>
-<div class="side-grp">Bienestar</div>
 <button data-go="comida"><span class="si">🍽</span><span class="sl">Comida</span></button>
-<div class="side-grp">General</div>
-<button data-go="ajustes"><span class="si">⚙</span><span class="sl">Ajustes</span></button>
+<button data-go="plan"><span class="si">▤</span><span class="sl">Plan</span></button>
+<button data-go="progreso"><span class="si">◇</span><span class="sl">Progreso</span></button>
 <button class="newbtn" id="newSide">+ Nueva tarea</button>
 </aside>
 <main class="main">
@@ -44,17 +41,11 @@
 <div id="planBody"></div>
 </section>
 
-<!-- CONSTANCIA -->
-<section class="screen" id="habitos">
-<div class="h-screen">Constancia</div>
-<div class="streak-hero"><div class="streak-num" id="streakNum">0</div><div class="streak-sub">días seguidos</div></div>
-<div class="week" id="week"></div>
-<div class="sect">Hábitos de la semana</div>
-<div class="note" style="margin-bottom:10px">Agrega los tuyos: aseo, leer, meditar… Portugués y francés en días distintos.</div>
-<div id="habitList"></div>
-<div class="subadd"><input class="input" id="newHabit" placeholder="Nuevo hábito (ej. aseo)"><button class="icbtn" id="addHabit" aria-label="Agregar hábito">+</button></div>
-<div class="sect">Logros</div>
-<div id="achList"></div>
+<!-- PROGRESO -->
+<section class="screen" id="progreso">
+<div class="h-screen">Tu progreso</div>
+<div class="seg" id="progresoseg"><button class="on" data-v="resumen">Resumen</button><button data-v="cuerpo">Cuerpo</button><button data-v="rachas">Rachas</button><button data-v="stats">Estadísticas</button></div>
+<div id="progresoBody"></div>
 </section>
 
 <!-- DINERO -->
@@ -66,7 +57,7 @@
 <!-- COMIDA -->
 <section class="screen" id="comida">
 <div class="h-screen">Comida</div>
-<div class="seg" id="comidaseg"><button class="on" data-v="plan">Plan</button><button data-v="recetas">Recetas</button><button data-v="super">Súper</button><button data-v="refri">Refri</button><button data-v="suplementos">Suplementos</button><button data-v="perfil">Perfil</button></div>
+<div class="seg" id="comidaseg"><button class="on" data-v="plan">Plan</button><button data-v="recetas">Recetas</button><button data-v="super">Súper</button><button data-v="refri">Refri</button><button data-v="suplementos">Suplementos</button></div>
 <div id="comidaBody"></div>
 </section>
 
@@ -174,11 +165,10 @@
 
 <nav class="nav">
 <button class="on" data-go="hoy"><span class="ni">◎</span><span class="nl">Hoy</span></button>
-<button data-go="plan"><span class="ni">▤</span><span class="nl">Plan</span></button>
-<button data-go="habitos"><span class="ni">◇</span><span class="nl">Constancia</span></button>
 <button data-go="dinero"><span class="ni">$</span><span class="nl">Dinero</span></button>
 <button data-go="comida"><span class="ni">🍽</span><span class="nl">Comida</span></button>
-<button data-go="ajustes"><span class="ni">⚙</span><span class="nl">Ajustes</span></button>
+<button data-go="plan"><span class="ni">▤</span><span class="nl">Plan</span></button>
+<button data-go="progreso"><span class="ni">◇</span><span class="nl">Progreso</span></button>
 </nav>
 <button class="fab-float" id="fab" aria-label="Agregar tarea">+</button>
 
@@ -211,6 +201,18 @@
 <div class="field" id="c-tpl-wrap" style="display:none"><span class="label">Plantilla</span><div class="pills" id="c-tpl"></div></div>
 <div class="field" id="c-img-wrap" style="display:none"><span class="label">Imagen de fondo</span><input type="file" id="c-imgfile" accept="image/*" style="display:none"><button class="btn btn-ghost" id="c-imgbtn" type="button">Subir imagen…</button><div style="height:8px"></div><button class="btn btn-ghost" id="c-imgclear" type="button">Quitar imagen</button><div class="note" id="c-imgnote" style="margin-top:8px">Se reduce a ~480px para ocupar poco y poder sincronizarse.</div></div>
 <button class="btn btn-primary" id="c-save">Guardar tarjeta</button><div style="height:10px"></div><button class="btn btn-ghost" id="c-cancel">Cancelar</button>
+</div></div>
+<!-- MODAL celda de horario -->
+<div class="modal" id="cellModal"><div class="sheet"><h3 id="ce-title">Actividad</h3>
+<div class="field" style="margin-top:8px"><span class="label">Actividad</span><input class="input" id="ce-text" placeholder="Ej. BD, SO, Estudio, Gym…"></div>
+<div class="field"><span class="label">Categoría</span><div class="pills" id="ce-cat"><button class="pill sel" data-v="clase">Clase</button><button class="pill" data-v="estudio">Estudio</button><button class="pill" data-v="trabajo">Trabajo</button><button class="pill" data-v="personal">Personal</button><button class="pill" data-v="libre">Libre</button></div></div>
+<div class="field"><span class="label">Estado</span><div class="pills" id="ce-done"><button class="pill sel" data-v="0">Pendiente</button><button class="pill" data-v="1">Completada</button></div></div>
+<button class="btn btn-primary" id="ce-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="ce-del">Vaciar celda</button><div style="height:10px"></div><button class="btn btn-ghost" id="ce-cancel">Cancelar</button>
+</div></div>
+<!-- MODAL rápido (agua/peso) -->
+<div class="modal" id="quickModal"><div class="sheet"><h3 id="q-title">Registrar</h3>
+<div class="field" style="margin-top:8px"><span class="label" id="q-label">Valor</span><input class="input mono" id="q-input" type="number" inputmode="decimal" step="0.01" placeholder="0"></div>
+<button class="btn btn-primary" id="q-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="q-cancel">Cancelar</button>
 </div></div>
 <!-- MODAL registrar pago de tarjeta -->
 <div class="modal" id="payRegModal"><div class="sheet"><h3 id="pr-title">Registrar pago</h3>

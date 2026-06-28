@@ -87,8 +87,9 @@ function buildPrSrc() {
   items.forEach((a, i) => (box.innerHTML += '<button class="pill' + (i === 0 ? " sel" : "") + '" data-v="' + a.id + '">' + esc(a.name) + '</button>'));
   prSrc = items[0].id; pillGroup(box, (v) => (prSrc = v));
 }
-export function openPayReg(id: any) {
-  const c = cardById(id); if (!c) return; prCardId = id;
+let prOnDone: (() => void) | null = null;
+export function openPayReg(id: any, onDone?: () => void) {
+  const c = cardById(id); if (!c) return; prCardId = id; prOnDone = onDone || null;
   $("pr-title").textContent = "Registrar pago · " + c.name;
   $("pr-info").textContent = "Saldo actual " + money(c.balance || 0) + (c.min ? " · mínimo " + money(c.min) : "");
   $<HTMLInputElement>("pr-amt").value = String(cardPay(c) || c.min || c.balance || "");
@@ -215,6 +216,15 @@ export function openSupp(id?: any, onDone?: () => void) {
   openModal("suppModal");
 }
 
+/* ============ Modal rápido (un valor numérico) ============ */
+let qOnSave: ((v: number) => void) | null = null;
+export function openQuick(title: string, label: string, value: number, onSave: (v: number) => void) {
+  qOnSave = onSave;
+  $("q-title").textContent = title; $("q-label").textContent = label;
+  $<HTMLInputElement>("q-input").value = value ? String(value) : "";
+  openModal("quickModal"); setTimeout(() => $("q-input").focus(), 250);
+}
+
 /* ============ Wiring de botones estáticos ============ */
 export function initModals() {
   // tarjeta
@@ -256,7 +266,7 @@ export function initModals() {
       const t: any = { id: DB.txSeq++, type: "gasto", amount: amt, cat: "Pago tarjeta", note: ($<HTMLInputElement>("pr-note").value.trim() || ("Pago " + c.name)), date: new Date().toISOString(), method: prMethod === "efectivo" ? "efectivo" : "debito", acctId: prSrc };
       DB.tx.push(t); applyTx(t, 1);
     }
-    save(); closeModal("payRegModal"); renderDinero("tarjetas");
+    save(); closeModal("payRegModal"); if (prOnDone) prOnDone(); else renderDinero("tarjetas");
   };
 
   // cuenta
@@ -286,6 +296,9 @@ export function initModals() {
   // compra de súper -> Finanzas
   pillGroup($("buy-method"), (v) => { buyMethod = v; updateBuyMethodUI(); });
   $("rc-close").onclick = () => closeModal("recipeModal");
+  // modal rápido
+  $("q-cancel").onclick = () => closeModal("quickModal");
+  $("q-save").onclick = () => { const v = +$<HTMLInputElement>("q-input").value; closeModal("quickModal"); if (qOnSave) qOnSave(v); };
   // suplemento
   pillGroup($("sp-rem"), (v) => (suppRem = +v));
   $("sp-cancel").onclick = () => closeModal("suppModal");
@@ -304,5 +317,5 @@ export function initModals() {
   };
 
   // cerrar al tocar el fondo
-  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal", "chooseModal", "suppModal", "payRegModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
+  ["blkModal", "cardModal", "payModal", "acctModal", "txModal", "subModal", "goalModal", "buyModal", "recipeModal", "chooseModal", "suppModal", "payRegModal", "quickModal", "cellModal"].forEach((id) => { const m = $(id); if (m) m.onclick = (e: any) => { if (e.target === m) closeModal(id); }; });
 }

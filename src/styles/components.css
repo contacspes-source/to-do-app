@@ -301,3 +301,37 @@
 /* ---- HOY: número de prioridad ---- */
 .today-row .rank{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-family:var(--font-mono);font-weight:700;font-size:12px;flex:none;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s var(--ease),color .2s var(--ease)}
 .today-row .rank:hover{background:var(--accent);color:var(--accent-ink)}
+
+/* ---- Horario matricial ---- */
+.ttwrap{overflow-x:auto;border:1px solid var(--hair);border-radius:var(--r-card);margin-bottom:12px}
+table.tt{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+table.tt th{background:var(--nav-bg);color:var(--nav-ink-active);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:8px 6px;text-align:center}
+table.tt td{border:1px solid var(--hair);padding:0;text-align:center}
+table.tt td:first-child{background:var(--bg-soft)}
+.tt-time,.tt-cell{width:100%;border:0;background:transparent;color:var(--ink-1);font-family:var(--font-ui);font-size:13px;padding:10px 6px;text-align:center}
+.tt-time{font-family:var(--font-mono);font-weight:600;color:var(--ink-2)}
+.tt-cell:focus,.tt-time:focus{outline:none;background:var(--accent-dim)}
+table.tt .hx{color:var(--ink-4);background:none;border:0;font-size:15px;cursor:pointer;padding:6px}
+
+/* ---- Horario v2: 7 días con categorías ---- */
+table.tt{min-width:680px}
+.tt-hcell{background:var(--bg-soft)}
+.tt-act{width:100%;border:0;border-radius:7px;padding:9px 6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui);color:#fff;line-height:1.2;transition:filter .15s var(--ease)}
+.tt-act:hover{filter:brightness(1.08)}
+.tt-act.done{opacity:.5;text-decoration:line-through}
+.tt-empty{width:100%;border:0;background:transparent;color:var(--ink-4);font-size:16px;cursor:pointer;padding:9px 6px}
+.tt-empty:hover{color:var(--accent)}
+.cat-clase{background:#2563eb}.cat-estudio{background:#16a34a}.cat-trabajo{background:#ea580c}.cat-personal{background:#7c3aed}.cat-libre{background:#64748b}
+.ttlegend{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.ttlegend span{font-size:11px;font-weight:600;color:#fff;border-radius:999px;padding:3px 10px}
+
+/* ===== Decisión del día (HOY) ===== */
+.decisions{display:flex;flex-direction:column;gap:8px;margin:6px 0 18px}
+.dec{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--bg-soft);border:1px solid var(--hair);border-left:3px solid var(--accent);border-radius:var(--r-card);padding:12px 13px;cursor:pointer;font-family:var(--font-ui);transition:border-color .2s var(--ease),transform .1s var(--ease)}
+.dec:hover{border-color:var(--hair-2);border-left-color:var(--accent)}
+.dec:active{transform:scale(.99)}
+.dec.urgent{border-left-color:var(--warn);background:var(--warn-dim)}
+.dec .dec-ic{flex:none;color:var(--accent);line-height:0;margin-top:1px}
+.dec.urgent .dec-ic{color:var(--warn)}
+.dec .dec-t{flex:1;font-size:13.5px;line-height:1.4;color:var(--ink-1)}
+.dec .dec-go{flex:none;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);font-weight:600;white-space:nowrap}

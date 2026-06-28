@@ -19,6 +19,8 @@ export interface TodayItem {
   done: boolean;
   prio: number;                 // menor = más prioritario
   track: boolean;               // cuenta para el Momentum
+  kind: string;                 // pay | water | weight | meals | supp | plan | activity | task
+  refId?: any;                  // id de tarjeta/suplemento/tarea
   toggle?: () => void;          // acción instantánea
   goto?: { screen: string };    // o navegar al módulo
 }
@@ -36,24 +38,25 @@ export function buildToday(): TodayItem[] {
     if (c.active === false || !c.pay) return;
     const rem = remainingThisCycle(c); if (rem <= 0) return;
     const d = dnext(+c.pay);
-    if (d >= 0 && d <= 5) items.push({ id: "pay-" + c.id, label: "Pagar " + c.name, meta: "restan " + money(rem) + " · " + (d === 0 ? "vence hoy" : "vence en " + d + "d"), group: "urgente", done: false, prio: d, track: false, goto: { screen: "dinero" } });
+    if (d >= 0 && d <= 5) items.push({ id: "pay-" + c.id, label: "Pagar " + c.name, meta: "restan " + money(rem) + " · " + (d === 0 ? "vence hoy" : "vence en " + d + "d"), group: "urgente", done: false, prio: d, track: false, kind: "pay", refId: c.id });
   });
 
   // 2) Salud (cuentan para momentum)
   const taken = (k: number) => (DB.supplementLog || {})[day + "-" + k];
-  items.push({ id: "agua", label: "Tomar " + wt + " L de agua", group: "salud", done: (DB.waterLog?.[day] || 0) >= wt, prio: 10, track: true, toggle: () => T.logWater(wt) });
-  items.push({ id: "peso", label: "Registrar tu peso", group: "salud", done: !!T.todayWeight(), prio: 11, track: true, goto: { screen: "comida" } });
-  items.push({ id: "comidas", label: "Registrar tus comidas", group: "salud", done: !!DB.mealsLog?.[day], prio: 13, track: true, toggle: () => T.setMealsLogged(!DB.mealsLog?.[day]) });
-  (DB.supplements || []).forEach((s) => { if (s.reminder) items.push({ id: "sup-" + s.id, label: "Tomar " + s.name, meta: s.dose, group: "salud", done: !!taken(s.id), prio: 12, track: true, toggle: () => toggleSupp(s.id) }); });
+  items.push({ id: "agua", label: "Tomar " + wt + " L de agua", group: "salud", done: (DB.waterLog?.[day] || 0) >= wt, prio: 10, track: true, kind: "water" });
+  items.push({ id: "peso", label: "Registrar tu peso", group: "salud", done: !!T.todayWeight(), prio: 11, track: true, kind: "weight" });
+  items.push({ id: "comidas", label: "Registrar tus comidas", group: "salud", done: !!DB.mealsLog?.[day], prio: 13, track: true, kind: "meals", toggle: () => T.setMealsLogged(!DB.mealsLog?.[day]) });
+  items.push({ id: "actividad", label: "Actividad física", group: "salud", done: !!DB.activityLog?.[day], prio: 14, track: true, kind: "activity", toggle: () => T.setActivity(!DB.activityLog?.[day]) });
+  (DB.supplements || []).forEach((s) => { if (s.reminder) items.push({ id: "sup-" + s.id, label: "Tomar " + s.name, meta: s.dose, group: "salud", done: !!taken(s.id), prio: 12, track: true, kind: "supp", toggle: () => toggleSupp(s.id) }); });
 
   // 3) Plan / hábito del día
-  items.push({ id: "plan", label: "Seguir el plan de hoy", group: "plan", done: !!DB.planLog?.[day], prio: 20, track: true, toggle: () => T.setPlanFollowed(!DB.planLog?.[day]) });
+  items.push({ id: "plan", label: "Seguir el plan de hoy", group: "plan", done: !!DB.planLog?.[day], prio: 20, track: true, kind: "plan", toggle: () => T.setPlanFollowed(!DB.planLog?.[day]) });
 
   // 4) Universidad / tareas de hoy (cuentan para momentum)
   (DB.tasks || []).forEach((t) => {
-    if (t.done) { items.push({ id: "task-" + t.id, label: t.title, meta: t.time || "", group: "tareas", done: true, prio: 30, track: true, toggle: () => toggleTask(t.id) }); return; }
+    if (t.done) { items.push({ id: "task-" + t.id, label: t.title, meta: t.time || "", group: "tareas", done: true, prio: 30, track: true, kind: "task", toggle: () => toggleTask(t.id) }); return; }
     const isToday = t.featured || t.time;
-    items.push({ id: "task-" + t.id, label: t.title, meta: t.time || (t.featured ? "importante" : ""), group: "tareas", done: false, prio: t.featured ? 25 : 31, track: true, toggle: () => toggleTask(t.id) });
+    items.push({ id: "task-" + t.id, label: t.title, meta: t.time || (t.featured ? "importante" : ""), group: "tareas", done: false, prio: t.featured ? 25 : 31, track: true, kind: "task", toggle: () => toggleTask(t.id) });
     void isToday;
   });
 

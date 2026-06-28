@@ -1,7 +1,7 @@
 /**
  * pages/dinero.ts — Finanzas con DASHBOARD de entrada.
- * Al abrir Dinero se muestra un panel de accesos (tarjetas grandes con icono,
- * nombre, descripción e indicador). Cada uno abre su subvista con botón "volver".
+ * Responde "¿cómo está mi dinero?" con 4 preguntas clave y accesos con
+ * divulgación progresiva (esenciales primero; el resto bajo "Ver todo").
  * Reutiliza toda la lógica financiera existente (finance/*) sin duplicarla.
  */
 import { DB, save } from "../database/store";
@@ -11,13 +11,15 @@ import {
   sum, acctById, totalDebt, totalDebito, monthTx, applyTx, nextDateForDay,
   monthlyIncome, monthlyGasto, monthlySubs, monthsSpanAll, computeAlerts,
 } from "../finance/calc";
-import { cardBg, cardById, cardPay, requiredThisCycle, paidThisCycleAmount, remainingThisCycle } from "../finance/cards";
+import { cardBg, cardById, requiredThisCycle, paidThisCycleAmount, remainingThisCycle } from "../finance/cards";
 import { openCard, openPay, openPayReg, openAcct, openTx, openSub, openGoal } from "../components/modals";
 import { icon } from "../components/icons";
 
 let dinSeg = "home";
 let proyH = 1;
 let dashEdit = false;
+let dashMore = false;
+const PRIMARY = ["tarjetas", "presupuesto", "movs", "debito"]; // accesos esenciales (resto bajo "Ver todo")
 let histCard: any = null; // filtro de historial por tarjeta
 let histAcct: any = null; // filtro de historial por cuenta
 
@@ -74,9 +76,12 @@ function renderDashboard(w: HTMLElement) {
   const ordered = order.map((k) => items.find((i) => i.key === k)!).sort((a, b) => (pins.includes(b.key) ? 1 : 0) - (pins.includes(a.key) ? 1 : 0));
   h += '<div class="sect" style="display:flex;justify-content:space-between;align-items:center">Accesos<button class="lnk" id="dashEditBtn">' + (dashEdit ? "Listo" : "Editar") + '</button></div>';
   h += '<div class="dash">';
+  let oculto = 0;
   ordered.forEach((it) => {
     const isHidden = hidden.includes(it.key), isPin = pins.includes(it.key);
     if (isHidden && !dashEdit) return;
+    // divulgación progresiva: por defecto solo esenciales (+ fijados); el resto bajo "Ver todo"
+    if (!dashEdit && !dashMore && !PRIMARY.includes(it.key) && !isPin) { oculto++; return; }
     h += '<div class="dash-card' + (isHidden ? " dimmed" : "") + '" data-dash="' + it.key + '">' +
       (isPin ? '<span class="dc-pin">●</span>' : '') +
       '<span class="dc-ic">' + icon(it.icon, 22) + '</span><span class="dc-name">' + it.name + '</span><span class="dc-desc">' + it.desc + '</span><span class="dc-ind">' + it.ind() + '</span>' +
@@ -84,7 +89,9 @@ function renderDashboard(w: HTMLElement) {
       '</div>';
   });
   h += '</div>';
+  if (!dashEdit && (oculto > 0 || dashMore)) h += '<button class="lnk" id="dashMoreBtn" style="display:block;margin:10px auto 0">' + (dashMore ? "Ver menos" : "Ver todo (" + oculto + ")") + '</button>';
   w.innerHTML = h;
+  const moreBtn = $("dashMoreBtn"); if (moreBtn) moreBtn.onclick = () => { dashMore = !dashMore; renderDashboard(w); };
   $("dashEditBtn").onclick = () => { dashEdit = !dashEdit; renderDashboard(w); };
   qsa<HTMLElement>("[data-mv]", w).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const [dir, k] = b.dataset.mv!.split(":"); const o = (DB.finOrder || []).slice(); const i = o.indexOf(k); const j = dir === "up" ? i - 1 : i + 1; if (i >= 0 && j >= 0 && j < o.length) { const t = o[i]; o[i] = o[j]; o[j] = t; DB.finOrder = o; save(); renderDashboard(w); } }));
   qsa<HTMLElement>("[data-pin]", w).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const k = b.dataset.pin!; DB.finPins = pins.includes(k) ? pins.filter((x) => x !== k) : [...pins, k]; save(); renderDashboard(w); }));

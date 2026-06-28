@@ -79,6 +79,7 @@ export interface AppState {
   measurements?: Measurement[];
   bodyPhotos?: BodyPhoto[];
   waterLog?: Record<string, number>; // dateKey -> litros registrados
+  activityLog?: Record<string, boolean>; // dateKey -> actividad física
   planLog?: Record<string, boolean>; // dateKey -> siguió el plan
   mealsLog?: Record<string, boolean>;// dateKey -> registró comidas
   // ---- Refri, recordatorios, revisión ----
@@ -92,7 +93,11 @@ export interface AppState {
   supplements?: Supplement[]; supplementSeq?: number;
   supplementLog?: Record<string, boolean>; // dateISO-suppId -> tomado
   courses?: Course[]; courseSeq?: number; evalSeq?: number;
+  timetable?: TimetableRow[];
 }
+
+export interface TimeCell { text: string; cat?: string; done?: boolean; }
+export interface TimetableRow { time: string; cells: (TimeCell | null)[]; }
 
 export interface GradeEval { id: number; name: string; weight: number; grade?: number | null; }
 export interface Course { id: number; name: string; target?: number; credits?: number; evals: GradeEval[]; }

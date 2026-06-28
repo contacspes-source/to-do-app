@@ -1,8 +1,9 @@
 /**
  * pages/hoy.ts — HOY: centro de mando del Sistema Operativo Personal.
  * Una sola pantalla que reúne lo importante del día (finanzas, comida,
- * suplementos, salud, hábitos, universidad), con prioridad automática,
- * Momentum y tarjetas resumen. Lo demás vive como módulos secundarios.
+ * suplementos, salud, hábitos, universidad), con la "Decisión del día"
+ * (motor de recomendaciones), prioridad automática, Momentum y resúmenes.
+ * Lo demás vive como servicios que alimentan HOY.
  */
 import { DB, save, dk } from "../database/store";
 import { $, qsa } from "../utils/dom";
@@ -11,10 +12,12 @@ import type { Task } from "../types";
 import { openDetail } from "./tarea-detalle";
 import { go } from "../router";
 import { buildToday, momentum, financeToday, type TodayItem } from "../services/today";
+import { topDecisions } from "../services/decisions";
 import { money } from "../utils/format";
+import { icon } from "../components/icons";
 import * as T from "../services/tracking";
 import { recipesForDay } from "../services/mealplan";
-import { openRecipe } from "../components/modals";
+import { openRecipe, openPayReg, openQuick } from "../components/modals";
 
 let hoyMode = "hoy";
 
@@ -46,7 +49,29 @@ export function renderHoy() {
   // ----- Centro de mando -----
   const items = buildToday(); const m = momentum();
   const pend = items.filter((i) => !i.done);
-  top.innerHTML = '<div class="momentum"><div class="mo-ring">' + momentumRing(m.pct) + '</div><div class="mo-txt"><div class="mo-h">' + (m.pct >= 80 ? "Tu día va muy bien" : m.pct >= 40 ? "Buen avance" : "Empieza por lo de arriba") + '</div><div class="note" style="margin:4px 0 0">' + m.done + ' de ' + m.total + ' completados hoy.</div></div></div>';
+
+  // Decisión del día (motor de recomendaciones)
+  const decs = topDecisions(3);
+  let decH = '<div class="decisions">';
+  decs.forEach((d, i) => {
+    decH += '<button class="dec' + (d.urgent ? " urgent" : "") + '" data-deci="' + i + '">' +
+      '<span class="dec-ic">' + icon(d.icon, 18) + '</span>' +
+      '<span class="dec-t">' + esc(d.text) + '</span>' +
+      '<span class="dec-go">' + (d.kind === "pay" ? "pagar" : d.goto && d.goto !== "hoy" ? "abrir" : "ver") + ' &rarr;</span>' +
+      '</button>';
+  });
+  decH += '</div>';
+
+  // Momentum
+  const moH = '<div class="momentum"><div class="mo-ring">' + momentumRing(m.pct) + '</div><div class="mo-txt"><div class="mo-h">' + (m.pct >= 80 ? "Tu día va muy bien" : m.pct >= 40 ? "Buen avance" : "Empieza por lo de arriba") + '</div><div class="note" style="margin:4px 0 0">' + m.done + ' de ' + m.total + ' completados hoy.</div></div></div>';
+
+  top.innerHTML = '<div class="sect" style="margin-top:4px">Decisión del día</div>' + decH + moH;
+  qsa<HTMLElement>("[data-deci]", top).forEach((b) => (b.onclick = () => {
+    const d = decs[+b.dataset.deci!];
+    if (d.kind === "pay" && d.refId != null) { openPayReg(d.refId, renderHoy); return; }
+    if (d.goto && d.goto !== "hoy") { go(d.goto); return; }
+    const l = $("todayList"); l?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
 
   // lista priorizada
   addSect(list, pend.length ? "Haz esto primero" : "Todo listo por hoy");
@@ -63,8 +88,14 @@ function todayRow(it: TodayItem, rank: number | null): HTMLElement {
   el.className = "task today-row" + (it.done ? " done" : "");
   const tag = '<span class="badge ' + (it.group === "urgente" ? "alta" : it.group === "salud" ? "media" : "baja") + '">' + GROUP_LABEL[it.group] + '</span>';
   const lead = it.done ? '<button class="check" aria-label="Hecho">' + CHK + '</button>' : '<button class="rank" aria-label="Completar">' + rank + '</button>';
-  el.innerHTML = lead + '<div class="body"><span class="ttl">' + esc(it.label) + '</span><div class="meta">' + tag + (it.meta ? '<span class="time">' + esc(it.meta) + '</span>' : '') + (it.goto && !it.done ? '<span class="fpill">abrir →</span>' : '') + '</div></div>';
-  const act = () => { if (it.toggle) { it.toggle(); renderHoy(); } else if (it.goto) { go(it.goto.screen); } };
+  el.innerHTML = lead + '<div class="body"><span class="ttl">' + esc(it.label) + '</span><div class="meta">' + tag + (it.meta ? '<span class="time">' + esc(it.meta) + '</span>' : '') + (it.goto && !it.done ? '<span class="fpill">abrir &rarr;</span>' : '') + '</div></div>';
+  const act = () => {
+    if (it.kind === "pay") { openPayReg(it.refId, renderHoy); return; }
+    if (it.kind === "water") { openQuick("Registrar agua", "Litros de hoy (meta " + (DB.foodProfile?.waterTargetL || 3) + ")", DB.waterLog?.[T.isoDay()] || 0, (v) => { T.logWater(v); renderHoy(); }); return; }
+    if (it.kind === "weight") { openQuick("Registrar peso", "Peso de hoy (kg)", T.latestWeight(), (v) => { if (v > 0) T.logWeight(v); renderHoy(); }); return; }
+    if (it.kind === "meals") { const di = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1; const cm = recipesForDay(di).find((x) => x.slot === "comida")?.recipe; if (cm) { openRecipe(cm.id, { day: di, slot: "comida" }, renderHoy); return; } }
+    if (it.toggle) { it.toggle(); renderHoy(); } else if (it.goto) { go(it.goto.screen); }
+  };
   el.querySelector(".rank,.check")!.addEventListener("click", (e) => { e.stopPropagation(); act(); });
   el.onclick = act;
   return el;
@@ -82,7 +113,7 @@ function renderSummary(list: HTMLElement) {
   // MealPrep
   grid.innerHTML += '<button class="tcard" ' + (comida ? 'data-recipe2="' + comida.id + '" data-rday="' + di + '"' : 'data-go2="comida"') + '><div class="tc-h">Comida de hoy</div><div class="tc-big2">' + (comida ? esc(comida.name) : "—") + '</div><div class="tc-line">' + (comida ? "Toca para ver la receta" : "Genera tu plan") + '</div></button>';
   // Progreso
-  grid.innerHTML += '<button class="tcard" data-go2="comida"><div class="tc-h">Progreso</div><div class="tc-big">' + st.plan + ' días</div><div class="tc-sub">racha de plan</div><div class="tc-line">Peso: ' + peso + ' kg</div></button>';
+  grid.innerHTML += '<button class="tcard" data-go2="progreso"><div class="tc-h">Progreso</div><div class="tc-big">' + st.plan + ' días</div><div class="tc-sub">racha de plan</div><div class="tc-line">Peso: ' + peso + ' kg</div></button>';
   list.appendChild(grid);
   qsa<HTMLElement>("[data-go2]", grid).forEach((b) => (b.onclick = () => go(b.dataset.go2!)));
   qsa<HTMLElement>("[data-recipe2]", grid).forEach((b) => (b.onclick = () => openRecipe(b.dataset.recipe2!, { day: +b.dataset.rday!, slot: "comida" }, renderHoy)));

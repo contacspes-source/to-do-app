@@ -54,6 +54,7 @@ function migrate() {
   DB.measurements = DB.measurements || [];
   DB.bodyPhotos = DB.bodyPhotos || [];
   DB.waterLog = DB.waterLog || {};
+  DB.activityLog = DB.activityLog || {};
   DB.planLog = DB.planLog || {};
   DB.mealsLog = DB.mealsLog || {};
   DB.pantry = DB.pantry || [];
@@ -75,6 +76,13 @@ function migrate() {
   if (!DB.courses) DB.courses = MATS.map((m, i) => ({ id: i + 1, name: m[0], target: 90, credits: 8, evals: [] }));
   DB.courseSeq = DB.courseSeq || (DB.courses.reduce((mx, c) => Math.max(mx, c.id), 0) + 1);
   DB.evalSeq = DB.evalSeq || 1;
+  if (!DB.timetable) DB.timetable = ["7:00", "9:00", "11:00", "13:00", "16:00", "18:00"].map((t) => ({ time: t, cells: [null, null, null, null, null, null, null] }));
+  // migrar formato viejo (celdas string / 5 días) a objetos de 7 días
+  DB.timetable.forEach((r: any) => {
+    r.cells = (r.cells || []).map((c: any) => (c == null || c === "") ? null : (typeof c === "string" ? { text: c } : c));
+    while (r.cells.length < 7) r.cells.push(null);
+    if (r.cells.length > 7) r.cells = r.cells.slice(0, 7);
+  });
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }
