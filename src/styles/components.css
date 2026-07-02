@@ -303,27 +303,25 @@
 .today-row .rank:hover{background:var(--accent);color:var(--accent-ink)}
 
 /* ---- Horario matricial ---- */
-.ttwrap{overflow-x:auto;border:1px solid var(--hair);border-radius:var(--r-card);margin-bottom:12px}
-table.tt{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
-table.tt th{background:var(--nav-bg);color:var(--nav-ink-active);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:8px 6px;text-align:center}
-table.tt td{border:1px solid var(--hair);padding:0;text-align:center}
-table.tt td:first-child{background:var(--bg-soft)}
-.tt-time,.tt-cell{width:100%;border:0;background:transparent;color:var(--ink-1);font-family:var(--font-ui);font-size:13px;padding:10px 6px;text-align:center}
-.tt-time{font-family:var(--font-mono);font-weight:600;color:var(--ink-2)}
-.tt-cell:focus,.tt-time:focus{outline:none;background:var(--accent-dim)}
-table.tt .hx{color:var(--ink-4);background:none;border:0;font-size:15px;cursor:pointer;padding:6px}
-
-/* ---- Horario v2: 7 días con categorías ---- */
-table.tt{min-width:680px}
-.tt-hcell{background:var(--bg-soft)}
-.tt-act{width:100%;border:0;border-radius:7px;padding:9px 6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui);color:#fff;line-height:1.2;transition:filter .15s var(--ease)}
+.ttwrap{overflow:hidden;border:1px solid var(--hair);border-radius:var(--r-card);margin-bottom:12px}
+table.tt{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px}
+table.tt th{background:var(--nav-bg);color:var(--nav-ink-active);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.02em;padding:6px 2px;text-align:center}
+table.tt td{border:1px solid var(--hair);padding:0;text-align:center;vertical-align:middle}
+.tt-hcol{width:44px}
+.tt-hcell{position:relative;background:var(--bg-soft)}
+.tt-time{width:100%;border:0;background:transparent;color:var(--ink-2);font-family:var(--font-mono);font-weight:600;font-size:10.5px;padding:7px 1px;text-align:center}
+.tt-time:focus{outline:none;background:var(--accent-dim)}
+.tt-del{position:absolute;top:0;right:0;color:var(--ink-4);background:none;border:0;font-size:11px;line-height:1;cursor:pointer;padding:1px 3px}
+.tt-act{width:100%;border:0;border-radius:6px;padding:7px 2px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:var(--font-ui);color:#fff;line-height:1.15;word-break:break-word;overflow-wrap:anywhere;transition:filter .15s var(--ease)}
 .tt-act:hover{filter:brightness(1.08)}
 .tt-act.done{opacity:.5;text-decoration:line-through}
-.tt-empty{width:100%;border:0;background:transparent;color:var(--ink-4);font-size:16px;cursor:pointer;padding:9px 6px}
+.tt-empty{width:100%;border:0;background:transparent;color:var(--ink-4);font-size:15px;cursor:pointer;padding:8px 2px}
 .tt-empty:hover{color:var(--accent)}
 .cat-clase{background:#2563eb}.cat-estudio{background:#16a34a}.cat-trabajo{background:#ea580c}.cat-personal{background:#7c3aed}.cat-libre{background:#64748b}
-.ttlegend{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
-.ttlegend span{font-size:11px;font-weight:600;color:#fff;border-radius:999px;padding:3px 10px}
+.ttlegend{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.ttlegend span{font-size:10.5px;font-weight:600;color:#fff;border-radius:999px;padding:3px 9px}
+.d-sm{display:none}
+@media (max-width:560px){ .tt-hcol{width:32px} table.tt th{font-size:9px;padding:5px 1px} .tt-time{font-size:9.5px} .tt-act{font-size:9.5px;padding:6px 1px} .tt-empty{padding:7px 1px} .d-lg{display:none} .d-sm{display:inline} }
 
 /* ===== Decisión del día (HOY) ===== */
 .decisions{display:flex;flex-direction:column;gap:8px;margin:6px 0 18px}

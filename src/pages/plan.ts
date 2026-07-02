@@ -82,13 +82,13 @@ export function renderPlan(seg = curSeg) {
     [["Interacción Humano-Computadora", "Proyecto pesado — sola"], ["Programación de Bajo Nivel", "Tras pasar Arquitectura"]].forEach((m) => { const el = document.createElement("div"); el.className = "task"; el.style.opacity = ".55"; el.innerHTML = '<div class="body"><span class="ttl">' + m[0] + '</span><div class="meta"><span class="time">' + m[1] + '</span></div></div>'; c.appendChild(el); });
     w.appendChild(c);
   } else if (seg === "horario") {
-    const days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]; const tt = DB.timetable || [];
-    let h = '<div class="note" style="margin-top:0">Tu semana. Toca una celda para asignar o editar una actividad; clic largo no, solo toca. Colores por categoría.</div>';
-    h += '<div class="ttwrap"><table class="tt"><thead><tr><th>Hora</th>' + days.map((d) => '<th>' + d + '</th>').join("") + '<th></th></tr></thead><tbody>';
+    const days = [["Lun", "L"], ["Mar", "Ma"], ["Mié", "Mi"], ["Jue", "J"], ["Vie", "V"], ["Sáb", "S"], ["Dom", "D"]]; const tt = DB.timetable || [];
+    let h = '<div class="note" style="margin-top:0">Tu semana completa, sin desplazamiento. Toca una celda para asignar o editar. Colores por categoría.</div>';
+    h += '<div class="ttwrap"><table class="tt"><thead><tr><th class="tt-hcol">Hora</th>' + days.map((d) => '<th><span class="d-lg">' + d[0] + '</span><span class="d-sm">' + d[1] + '</span></th>').join("") + '</tr></thead><tbody>';
     tt.forEach((r, ri) => {
-      h += '<tr><td class="tt-hcell"><input class="tt-time" data-r="' + ri + '" value="' + esc(r.time) + '"></td>';
+      h += '<tr><td class="tt-hcell"><input class="tt-time" data-r="' + ri + '" value="' + esc(r.time) + '"><button class="tt-del" data-delrow="' + ri + '" aria-label="Quitar hora">×</button></td>';
       for (let c = 0; c < 7; c++) { const cell = r.cells[c]; h += '<td>' + (cell ? '<button class="tt-act cat-' + (cell.cat || "clase") + (cell.done ? " done" : "") + '" data-r="' + ri + '" data-c="' + c + '">' + esc(cell.text) + '</button>' : '<button class="tt-empty" data-r="' + ri + '" data-c="' + c + '">+</button>') + '</td>'; }
-      h += '<td><button class="hx" data-delrow="' + ri + '" aria-label="Quitar hora">×</button></td></tr>';
+      h += '</tr>';
     });
     h += '</tbody></table></div><button class="btn btn-ghost" id="ttAddRow">+ Agregar hora</button>';
     h += '<div class="ttlegend"><span class="cat-clase">Clase</span><span class="cat-estudio">Estudio</span><span class="cat-trabajo">Trabajo</span><span class="cat-personal">Personal</span><span class="cat-libre">Libre</span></div>';
@@ -98,7 +98,7 @@ export function renderPlan(seg = curSeg) {
     qsa<HTMLElement>(".tt-act,.tt-empty", w).forEach((b) => (b.onclick = () => openCell(+b.dataset.r!, +b.dataset.c!)));
     $("ttAddRow").onclick = () => { DB.timetable!.push({ time: "", cells: [null, null, null, null, null, null, null] }); save(); renderPlan("horario"); };
     qsa<HTMLElement>("[data-delrow]", w).forEach((b) => (b.onclick = () => { DB.timetable!.splice(+b.dataset.delrow!, 1); save(); renderPlan("horario"); }));
-  } else if (seg === "ruta") {  } else if (seg === "ruta") {
+  } else if (seg === "ruta") {
     let h = '<div class="card-pad"><div style="color:var(--ink-2);font-size:14px;line-height:1.6">Dos materias clave son la raíz de tus áreas: Redes nace de Arquitectura; IA nace de Análisis de Algoritmos.</div></div>';
     h += '<div class="track-h">Ruta Redes / distribuidos</div>' + step("Arquitectura de Computadoras", "Inscribes 2026-B · base de redes", 1) + arrow() + step("Programación de Bajo Nivel", "2027-A, al pasar Arquitectura", 0) + arrow() + step("Módulo: Redes", "Admin. de redes, interconexión", 0);
     h += '<div class="track-h">Ruta Sistemas Inteligentes</div>' + step("Análisis de Algoritmos", "Inscribes 2026-B · base de IA", 1) + arrow() + step("Algoritmos metaheurísticos", "Redes neuronales, deep learning", 0) + arrow() + step("Módulo: Sistemas Inteligentes", "Aprendizaje máquina", 0);
