@@ -111,6 +111,15 @@ export function decisions(): Decision[] {
   if (sts.deficit > 0) out.push({ text: "Cuidado: tus pagos próximos superan tu efectivo por " + money(sts.deficit) + ".", urgent: true, icon: "dinero", kind: "gasto", goto: "dinero" });
   else if (sts.perDay > 0) out.push({ text: "Hoy puedes gastar ~" + money(sts.perDay) + " sin comprometer tus pagos.", urgent: false, icon: "presupuesto", kind: "gasto", goto: "dinero" });
 
+
+  // 6) Rutina de sueño (TDAH) — aviso suave cerca de la hora de baño
+  const rem = DB.reminders;
+  if (rem && rem.enabled && rem.bano) {
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    const bt = hm(rem.bano);
+    if (nowMin >= bt - 45 && nowMin <= bt + 20) out.push({ text: "Tu rutina de baño es a las " + rem.bano + ": ve cerrando el día para dormir a tiempo.", urgent: false, icon: "constancia", kind: "rutina", goto: "hoy" });
+  }
+
   if (!out.length) out.push({ text: "Vas al día. Mantén el ritmo: agua, comida y una tarea a la vez.", urgent: false, icon: "constancia", kind: "ok", goto: "hoy" });
 
   return out.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0));

@@ -131,6 +131,7 @@
 <div class="set-row" style="margin-top:0"><div><div class="sl">Activar recordatorios</div><div class="ss">Avisos de comidas y de súper</div></div><div class="toggle" id="rem-enabled"></div></div>
 <div class="field" style="margin-top:14px"><span class="label">Horarios de comida</span><div class="row2"><input class="input mono" id="rem-desayuno" type="time"><input class="input mono" id="rem-comida" type="time"></div><div style="height:8px"></div><input class="input mono" id="rem-cena" type="time"></div>
 <div class="field"><span class="label">Día de súper</span><select class="input select" id="rem-gday"><option value="0">Domingo</option><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option></select></div>
+<div class="field" style="margin-top:14px"><span class="label">Rutina (gym · baño · dormir)</span><div class="row2"><input class="input mono" id="rem-gym" type="time" title="Gym"><input class="input mono" id="rem-bano" type="time" title="Rutina de baño"></div><div style="height:8px"></div><input class="input mono" id="rem-dormir" type="time" title="Dormir"></div>
 <button class="btn btn-ghost" id="rem-save">Guardar recordatorios</button>
 <div style="height:10px"></div><button class="btn btn-ghost" id="rem-notif">Activar notificaciones del navegador</button>
 <div class="note" id="rem-msg" style="margin-top:10px">Las notificaciones funcionan mientras la app está abierta. Avisos en segundo plano: a futuro.</div>
@@ -209,6 +210,7 @@
 <!-- MODAL celda de horario -->
 <div class="modal" id="cellModal"><div class="sheet"><h3 id="ce-title">Actividad</h3>
 <div class="field" style="margin-top:8px"><span class="label">Actividad</span><input class="input" id="ce-text" placeholder="Ej. BD, SO, Estudio, Gym…"></div>
+<div class="field" id="ce-mats-wrap" style="margin-top:-2px"><span class="label">O elige una materia</span><div class="chips" id="ce-materias"></div></div>
 <div class="field"><span class="label">Categoría</span><div class="pills" id="ce-cat"><button class="pill sel" data-v="clase">Clase</button><button class="pill" data-v="estudio">Estudio</button><button class="pill" data-v="trabajo">Trabajo</button><button class="pill" data-v="personal">Personal</button><button class="pill" data-v="libre">Libre</button></div></div>
 <div class="field"><span class="label">Estado</span><div class="pills" id="ce-done"><button class="pill sel" data-v="0">Pendiente</button><button class="pill" data-v="1">Completada</button></div></div>
 <button class="btn btn-primary" id="ce-save">Guardar</button><div style="height:10px"></div><button class="btn btn-ghost" id="ce-del">Vaciar celda</button><div style="height:10px"></div><button class="btn btn-ghost" id="ce-cancel">Cancelar</button>

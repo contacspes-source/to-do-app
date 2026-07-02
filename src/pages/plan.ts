@@ -153,6 +153,13 @@ function openCell(r: number, c: number) {
   $<HTMLInputElement>("ce-text").value = cell ? cell.text : "";
   cellCat = cell && cell.cat ? cell.cat : "clase"; resetPills("ce-cat", cellCat);
   cellDone = cell && cell.done ? 1 : 0; resetPills("ce-done", String(cellDone));
+  // Materias compartidas (mismas de Calificaciones): elegir sin re-escribir
+  const mw = $("ce-materias");
+  if (mw) {
+    const cs = DB.courses || [];
+    mw.innerHTML = cs.length ? cs.map((c) => '<button class="chip" data-mat="' + esc(c.name) + '">' + esc(c.name) + '</button>').join("") : '<span class="note" style="margin:0">Agrega materias en Plan › Calificaciones.</span>';
+    qsa<HTMLElement>("[data-mat]", mw).forEach((b) => (b.onclick = () => { $<HTMLInputElement>("ce-text").value = b.dataset.mat!; cellCat = "clase"; resetPills("ce-cat", "clase"); }));
+  }
   openModal("cellModal"); setTimeout(() => $("ce-text").focus(), 250);
 }
 

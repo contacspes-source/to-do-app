@@ -49,11 +49,12 @@ export interface WeightEntry { date: string; kg: number; }
 export interface Measurement { date: string; waist?: number; chest?: number; hip?: number; arm?: number; thigh?: number; notes?: string; }
 export interface BodyPhoto { date: string; img: string; }
 export interface PantryItem { id: number; item: string; cat: string; expires?: string; }
-export interface Reminders { enabled?: boolean; desayuno?: string; comida?: string; cena?: string; groceryDay?: number; }
+export interface Reminders { enabled?: boolean; desayuno?: string; comida?: string; cena?: string; groceryDay?: number; gym?: string; bano?: string; dormir?: string; }
 
 export interface AppState {
   theme: "light" | "dark";
   updatedAt?: number;
+  schemaVersion?: number;
   name?: string;
   accent?: string;
   cur: string;

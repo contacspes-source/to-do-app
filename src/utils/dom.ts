@@ -23,5 +23,30 @@ export function resetPills(id: string, v: string) {
   qsa<HTMLElement>("#" + id + " .pill").forEach((p) => p.classList.toggle("sel", p.dataset.v === v));
 }
 
-export function openModal(id: string) { $(id)?.classList.add("on"); }
-export function closeModal(id: string) { $(id)?.classList.remove("on"); }
+let lastFocused: HTMLElement | null = null;
+export function openModal(id: string) {
+  const m = $(id); if (!m) return;
+  lastFocused = document.activeElement as HTMLElement;
+  m.classList.add("on");
+  m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-hidden", "false");
+  const f = m.querySelector<HTMLElement>("input,select,textarea,button,[tabindex]");
+  if (f) setTimeout(() => { try { f.focus(); } catch {} }, 60);
+}
+export function closeModal(id: string) {
+  const m = $(id); if (!m) return;
+  m.classList.remove("on"); m.setAttribute("aria-hidden", "true");
+  if (lastFocused) { try { lastFocused.focus(); } catch {} lastFocused = null; }
+}
+
+// Accesibilidad global: Escape cierra el modal superior; clic en el fondo también.
+if (typeof document !== "undefined") {
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const open = qsa<HTMLElement>(".modal.on"); const top = open[open.length - 1];
+    if (top) closeModal(top.id);
+  });
+  document.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement;
+    if (t && t.classList && t.classList.contains("modal") && t.classList.contains("on")) closeModal(t.id);
+  });
+}

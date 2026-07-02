@@ -6,7 +6,7 @@
 import { DB, save } from "../database/store";
 import type { WeightEntry, Measurement } from "../types";
 
-export function isoDay(d = new Date()): string { return d.toISOString().slice(0, 10); }
+export function isoDay(d = new Date()): string { const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), da = String(d.getDate()).padStart(2, "0"); return y + "-" + m + "-" + da; }
 
 /* ---------- registros ---------- */
 export function logWeight(kg: number) {

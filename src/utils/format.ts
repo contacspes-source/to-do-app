@@ -14,7 +14,8 @@ export function esc(s: any): string {
   return String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" } as Record<string, string>)[ch]);
 }
 export function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
-export function dk(d: Date): string { return d.toDateString(); }
+export function localYMD(d: Date): string { const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), da = String(d.getDate()).padStart(2, "0"); return y + "-" + m + "-" + da; }
+export function dk(d: Date): string { return localYMD(d); }
 export function greeting(): string { const h = new Date().getHours(); return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches"; }
 
 /** Ícono de check reutilizable. */

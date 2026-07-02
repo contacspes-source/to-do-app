@@ -9,7 +9,7 @@ import { MATS } from "./academic-data";
 
 const LS = window.localStorage;
 
-function dk(d: Date) { return d.toDateString(); }
+function dk(d: Date) { const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), da = String(d.getDate()).padStart(2, "0"); return y + "-" + m + "-" + da; }
 
 function loadRaw(): AppState | null {
   try { return JSON.parse(LS.getItem(STORAGE_KEY) || "null"); } catch { return null; }
@@ -59,7 +59,10 @@ function migrate() {
   DB.mealsLog = DB.mealsLog || {};
   DB.pantry = DB.pantry || [];
   DB.pantrySeq = DB.pantrySeq || 1;
-  DB.reminders = DB.reminders || { enabled: false, desayuno: "07:00", comida: "14:00", cena: "21:00", groceryDay: 0 };
+  DB.reminders = DB.reminders || { enabled: false, desayuno: "07:00", comida: "14:00", cena: "21:00", groceryDay: 0, gym: "", bano: "22:20", dormir: "22:45" };
+  if (DB.reminders.bano == null) DB.reminders.bano = "22:20";
+  if (DB.reminders.dormir == null) DB.reminders.dormir = "22:45";
+  if (DB.reminders.gym == null) DB.reminders.gym = "";
   DB.review = DB.review || {};
   DB.finPins = DB.finPins || [];
   DB.finHidden = DB.finHidden || [];
@@ -83,6 +86,19 @@ function migrate() {
     while (r.cells.length < 7) r.cells.push(null);
     if (r.cells.length > 7) r.cells = r.cells.slice(0, 7);
   });
+
+  // ---- migraciones versionadas (ordenadas por esquema) ----
+  DB.schemaVersion = DB.schemaVersion || 1;
+  if (DB.schemaVersion < 2) {
+    // v2: claves de 'history' unificadas a YYYY-MM-DD local (antes: toDateString)
+    const oldH: Record<string, boolean> = (DB.history as any) || {}, nh: Record<string, boolean> = {};
+    Object.keys(oldH).forEach((k) => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { nh[k] = oldH[k]; return; }
+      const d = new Date(k); nh[isNaN(+d) ? k : dk(d)] = oldH[k];
+    });
+    DB.history = nh;
+    DB.schemaVersion = 2;
+  }
 }
 
 export function persist() { LS.setItem(STORAGE_KEY, JSON.stringify(DB)); }

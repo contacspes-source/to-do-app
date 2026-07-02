@@ -16,7 +16,7 @@ export function habits(): Habit[] {
     { key: "comidas", label: "Comidas", done: (d) => !!DB.mealsLog?.[isoDay(d)] },
     { key: "plan", label: "Seguir el plan", done: (d) => !!DB.planLog?.[isoDay(d)] },
     { key: "actividad", label: "Actividad física", done: (d) => !!DB.activityLog?.[isoDay(d)] },
-    { key: "tareas", label: "Tareas", done: (d) => !!DB.history?.[d.toDateString()] },
+    { key: "tareas", label: "Tareas", done: (d) => !!DB.history?.[isoDay(d)] },
   ];
   const supps = (DB.supplements || []).filter((s) => s.reminder);
   if (supps.length) list.push({ key: "suplementos", label: "Suplementos", done: (d) => supps.every((s) => !!(DB.supplementLog || {})[isoDay(d) + "-" + s.id]) });

@@ -30,6 +30,9 @@ export function renderAjustes() {
   ($("rem-comida") as HTMLInputElement).value = r.comida || "";
   ($("rem-cena") as HTMLInputElement).value = r.cena || "";
   ($("rem-gday") as HTMLSelectElement).value = String(r.groceryDay ?? 0);
+  ($("rem-gym") as HTMLInputElement).value = r.gym || "";
+  ($("rem-bano") as HTMLInputElement).value = r.bano || "";
+  ($("rem-dormir") as HTMLInputElement).value = r.dormir || "";
 }
 
 export function initAjustes() {
@@ -45,7 +48,7 @@ export function initAjustes() {
   };
   // recordatorios
   $("rem-enabled").onclick = () => { DB.reminders = DB.reminders || {}; DB.reminders.enabled = !DB.reminders.enabled; save(); renderAjustes(); };
-  $("rem-save").onclick = () => { DB.reminders = DB.reminders || {}; DB.reminders.desayuno = ($("rem-desayuno") as HTMLInputElement).value; DB.reminders.comida = ($("rem-comida") as HTMLInputElement).value; DB.reminders.cena = ($("rem-cena") as HTMLInputElement).value; DB.reminders.groceryDay = +($("rem-gday") as HTMLSelectElement).value; save(); const m = $("rem-msg"); m.textContent = "Recordatorios guardados."; m.style.color = "var(--ink-1)"; };
+  $("rem-save").onclick = () => { DB.reminders = DB.reminders || {}; DB.reminders.desayuno = ($("rem-desayuno") as HTMLInputElement).value; DB.reminders.comida = ($("rem-comida") as HTMLInputElement).value; DB.reminders.cena = ($("rem-cena") as HTMLInputElement).value; DB.reminders.groceryDay = +($("rem-gday") as HTMLSelectElement).value; DB.reminders.gym = ($("rem-gym") as HTMLInputElement).value; DB.reminders.bano = ($("rem-bano") as HTMLInputElement).value; DB.reminders.dormir = ($("rem-dormir") as HTMLInputElement).value; save(); const m = $("rem-msg"); m.textContent = "Recordatorios guardados."; m.style.color = "var(--ink-1)"; };
   $("rem-notif").onclick = () => { requestNotifPermission().then((p) => { const m = $("rem-msg"); m.style.color = "var(--ink-1)"; m.textContent = p === "granted" ? "Notificaciones activadas (mientras la app está abierta)." : "Permiso: " + p + "."; }); };
   $("resetHab").onclick = () => { if (confirm("¿Reiniciar los hábitos de la semana?")) { DB.habitLog = {}; save(); } };
   $("resetAll").onclick = () => { if (confirm("¿Restablecer todo a los datos de ejemplo? Se borra tu progreso.")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } };
